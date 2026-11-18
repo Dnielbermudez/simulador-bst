@@ -166,6 +166,35 @@ input[type=text]:focus{border-color:var(--orange);box-shadow:0 0 0 4px #FFE9C7}
 .toast{position:fixed;left:50%;bottom:26px;transform:translate(-50%,30px);background:var(--dark);color:#fff;font-weight:800;padding:12px 20px;border-radius:14px;opacity:0;pointer-events:none;transition:all .3s;z-index:9;max-width:90vw;text-align:center}
 .toast.on{opacity:1;transform:translate(-50%,0)}
 
+
+.stage-head .stats{margin-left:auto}
+.xbtn{flex:0 0 auto}
+.xhead{display:none}
+body.exp{overflow:hidden}
+body.exp::before{content:"";position:fixed;inset:0;background:rgba(36,36,42,.5);z-index:40}
+body.exp .treebox{position:fixed;inset:10px;z-index:50;background:#fff;border-radius:24px;padding:12px 16px 12px;box-shadow:0 30px 80px rgba(0,0,0,.35);
+  display:grid;grid-template-columns:minmax(300px,440px) minmax(0,1fr);grid-template-rows:auto auto minmax(0,1fr) auto;
+  grid-template-areas:"xh xh" "sh sh" "st st" "pl ct";gap:8px 12px;min-width:0}
+body.exp .xhead{display:block;grid-area:xh}
+body.exp #xTitle{font-weight:900;font-size:22px;letter-spacing:-.01em;line-height:1.15}
+body.exp #xSub{font-weight:800;font-size:14.5px;color:var(--sub);margin-top:2px}
+body.exp .stage-head{grid-area:sh}
+body.exp .stage{grid-area:st;min-height:0;overflow:hidden}
+body.exp .legend{display:none}
+body.exp .player{grid-area:pl;align-self:end;padding:6px 8px;gap:6px}
+body.exp .controls{grid-area:ct;padding:6px 8px;gap:5px;align-self:end}
+body.exp .ib{width:32px;height:32px;border-radius:11px}
+body.exp .ib.play{width:44px}
+body.exp .xbtn{width:38px;height:38px;background:#FFF0D6;border-color:#EDB769;color:#B85E0B}
+body.exp .speed{min-width:180px;padding:4px 10px}
+body.exp .btn{padding:5px 10px;font-size:13px;border-radius:11px}
+body.exp .btn.primary{box-shadow:0 2px 0 #D07A08}
+body.exp input[type=text]{padding:5px 8px;font-size:13px;border-radius:11px}
+body.exp textarea#list{height:34px!important;min-height:34px;padding:5px 8px;font-size:12.5px}
+body.exp .hintx{display:none}
+body.exp .mini,body.exp .chk{font-size:12.5px}
+body.exp .looks{padding:3px 12px}body.exp .looks b{font-size:20px}
+@media (max-width:820px){body.exp .treebox{grid-template-columns:minmax(0,1fr);grid-template-areas:"xh" "sh" "st" "pl" "ct";overflow:auto}body.exp .stage{min-height:58vh}}
 @media (max-width:980px){
   .main{grid-template-columns:minmax(0,1fr);grid-template-areas:"code" "tree" "expl" "out";grid-template-rows:auto}
   .card{padding:22px 18px;border-radius:24px}
@@ -214,9 +243,11 @@ input[type=text]:focus{border-color:var(--orange);box-shadow:0 0 0 4px #FFE9C7}
     </div>
 
     <div class="treebox">
+      <div class="xhead"><div id="xTitle"></div><div id="xSub"></div></div>
       <div class="stage-head">
         <div class="looks"><span id="looksLabel">COMPARACIONES</span><b id="looks">0</b></div>
         <div class="stats" id="stats"></div>
+        <button class="ib xbtn" id="bExpand" title="Ver el árbol completo en pantalla grande" aria-label="Ver árbol completo"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M14 4h6v6M10 20H4v-6M20 4l-7 7M4 20l7-7"/></svg></button>
       </div>
       <div class="stage" id="stage">
         <svg id="svg" xmlns="http://www.w3.org/2000/svg" aria-label="Árbol binario de búsqueda">
@@ -302,7 +333,7 @@ const lerp=(a,b,t)=>a+(b-a)*t;
 const ease=t=>t<.5?4*t*t*t:1-Math.pow(-2*t+2,3)/2;
 const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 const REDUCE=window.matchMedia&&matchMedia('(prefers-reduced-motion: reduce)').matches;
-const MAX_NODES=100, DUR=640, DWELL=1750;
+const MAX_NODES=150, DUR=640, DWELL=1750;
 const SLIDE=[50,30,70,20,40,60,80];
 
 /* ================= Modelo del árbol ================= */
@@ -633,7 +664,7 @@ function opInorder(ctx){
 }
 
 /* ================= Estado de reproducción ================= */
-let frames=[],idx=0,playing=false,timer=null,speed=1,MODE='suc';
+let EXP=false,frames=[],idx=0,playing=false,timer=null,speed=1,MODE='suc';
 const history=[];
 function finalState(){const f=frames[frames.length-1];return{tree:f.tree,log:f.log};}
 function run(fn,opt={}){
@@ -683,7 +714,7 @@ function renderCode(f){
 function renderTexts(f){
   const h=$('#title');
   if(h.textContent!==f.title){h.textContent=f.title;h.classList.remove('swap');void h.offsetWidth;h.classList.add('swap');}
-  $('#subtitle').textContent=f.subtitle;
+  $('#subtitle').textContent=f.subtitle;$('#xTitle').textContent=f.title;$('#xSub').textContent=f.subtitle;
   const ct=$('#caseTag');if(f.caseTag){ct.textContent=f.caseTag;ct.hidden=false;}else ct.hidden=true;
   $('#looksLabel').textContent=f.looksLabel;
   const lk=$('#looks');
@@ -723,6 +754,7 @@ function show(i,instant){
   if(!instant)follow();
 }
 function follow(){
+  if(EXP)return;
   const st=$('#stage'),a=anim;if(!a||a.to.W<=st.clientWidth+2)return;
   let x=null;const m=a.to.marks.s||a.to.marks.k;
   if(m&&m.op>0)x=m.x;
@@ -743,7 +775,7 @@ let W=Math.max(280,$('#stage').clientWidth||800),anim=null,lastF=null;
 function layout(tree){
   const ids=inorderIds(tree),n=ids.length,rank={},depth={};ids.forEach((id,i)=>rank[id]=i);
   let maxD=-1;(function go(id,d){if(!id)return;depth[id]=d;if(d>maxD)maxD=d;go(tree.nodes[id].l,d+1);go(tree.nodes[id].r,d+1);})(tree.root,0);
-  const baseH=W<560?300:330,padX=16,slots=Math.max(2*n+1,3);
+  const baseH=EXP?Math.max(260,$('#stage').clientHeight-6):(W<560?300:330),padX=16,slots=Math.max(2*n+1,3);
   const half=Math.max(11,Math.min(48,(W-2*padX)/slots));
   const LW=Math.max(W,slots*half+2*padX);
   const r0=clamp(half*1.25,16,25);
@@ -793,7 +825,7 @@ function startTween(f,instant){
   if(prevS)for(const k in prevS.marks){if(!to.marks[k]){from.marks[k]={...prevS.marks[k]};to.marks[k]={...prevS.marks[k],op:0};}}
   const quick=instant||REDUCE;
   anim={t0:now,dur:quick?0:DUR/speed,from,to,f,pf:quick?f:(lastF||f),L};
-  svg.style.width=Math.max(to.W,from.W)+'px';svg.setAttribute('width',Math.max(to.W,from.W));
+  if(!EXP){svg.style.width=Math.max(to.W,from.W)+'px';svg.setAttribute('width',Math.max(to.W,from.W));}
   lastF=f;
 }
 
@@ -820,7 +852,9 @@ function chip(key,parent){
 function draw(s,a,e,time){
   used.clear();
   const f=a.f,pf=a.pf,r=s.r,half=s.half,lv=s.lv;
-  const VW=Math.max(s.W,a.to.W);svg.setAttribute('viewBox',`0 0 ${VW} ${s.H}`);svg.setAttribute('height',s.H);svg.setAttribute('width',VW);svg.style.width=VW+'px';
+  const VW=Math.max(s.W,a.to.W);svg.setAttribute('viewBox',`0 0 ${VW} ${s.H}`);
+  if(EXP){const st=$('#stage');const sw=st.clientWidth,sh=st.clientHeight;svg.setAttribute('width',sw);svg.setAttribute('height',sh);svg.style.width=sw+'px';svg.setAttribute('preserveAspectRatio','xMidYMid meet');}
+  else{svg.setAttribute('height',s.H);svg.setAttribute('width',VW);svg.style.width=VW+'px';svg.setAttribute('preserveAspectRatio','xMinYMin meet');}
   const vis=new Set(f.visited),pathSet=new Set(f.path),spathSet=new Set(f.spath);
   const nodeStyle=id=>{
     if(!f.tree.nodes[id])return (pf.states&&pf.states[id])||'target';
@@ -1014,7 +1048,19 @@ document.addEventListener('keydown',e=>{
 
 
 /* tamaño del escenario */
-new ResizeObserver(()=>{const w=Math.max(280,$('#stage').clientWidth);if(Math.abs(w-W)>1){W=w;if(frames.length)startTween(frames[idx],true);}}).observe($('#stage'));
+let lastSH=0;
+new ResizeObserver(()=>{const st=$('#stage');const w=Math.max(280,st.clientWidth),h=st.clientHeight;
+  if(Math.abs(w-W)>1||(EXP&&Math.abs(h-lastSH)>1)){W=w;lastSH=h;if(frames.length)startTween(frames[idx],true);}}).observe($('#stage'));
+const ICON_EXP='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M14 4h6v6M10 20H4v-6M20 4l-7 7M4 20l7-7"/></svg>';
+const ICON_SHR='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M20 10h-6V4M4 14h6v6M14 10l7-7M10 14l-7 7"/></svg>';
+function setExp(on){
+  EXP=on;document.body.classList.toggle('exp',on);
+  const b=$('#bExpand');b.innerHTML=on?ICON_SHR:ICON_EXP;b.title=on?'Volver a la vista normal (Esc)':'Ver el árbol completo en pantalla grande';
+  $('#stage').scrollLeft=0;
+  requestAnimationFrame(()=>{W=Math.max(280,$('#stage').clientWidth);lastSH=$('#stage').clientHeight;startTween(frames[idx],true);if(!on)follow();});
+}
+$('#bExpand').onclick=()=>setExp(!EXP);
+document.addEventListener('keydown',e=>{if(e.key==='Escape'&&EXP)setExp(false);});
 
 /* inicio */
 frames=[mkFrame({tree:buildInstant(SLIDE),log:[{t:'info',s:'Simulador listo · árbol: 50 30 70 20 40 60 80'}],
