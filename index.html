@@ -277,7 +277,7 @@ body.exp .looks{padding:3px 12px}body.exp .looks b{font-size:20px}
           <button id="zIn" title="Acercar (+)" aria-label="Acercar">+</button>
           <button id="zFit" class="fit" title="Ver todo el árbol (0)">Ajustar</button>
         </div>
-        <div class="zhint" id="zHint">Rueda del mouse o pellizco para hacer zoom · arrastra para moverte · doble clic para acercar</div>
+        <div class="zhint" id="zHint">Pellizca el touchpad o usa la rueda para hacer zoom · desliza dos dedos o arrastra para moverte</div>
       </div>
       <div class="legend">
         <span><i class="lg focus"></i>comparando</span>
@@ -1098,7 +1098,21 @@ function hideHint(){$('#zHint').classList.add('off');}
 (function(){
   const st=$('#stage');const ptrs=new Map();let pinch=null,moved=false;
   const loc=e=>{const r=st.getBoundingClientRect();return{x:e.clientX-r.left,y:e.clientY-r.top};};
-  st.addEventListener('wheel',e=>{if(!EXP)return;e.preventDefault();const p=loc(e);zoomAt(Math.exp(-e.deltaY*(e.ctrlKey?0.01:0.0018)),p.x,p.y);},{passive:false});
+  st.addEventListener('wheel',e=>{
+    if(!EXP)return;e.preventDefault();const p=loc(e);
+    const unit=e.deltaMode===1?16:e.deltaMode===2?st.clientHeight:1;
+    const dx=e.deltaX*unit,dy=e.deltaY*unit;
+    if(e.ctrlKey){zoomAt(Math.exp(-dy*0.012),p.x,p.y);return;}            /* pellizco en touchpad */
+    const mouseNotch=e.deltaMode===1||(dx===0&&Math.abs(dy)>=50&&Number.isInteger(e.deltaY));
+    if(mouseNotch){zoomAt(Math.exp(-dy*0.0018),p.x,p.y);return;}           /* rueda del mouse */
+    const L=VIEW.last;if(!L)return;                                         /* dos dedos: desplazar */
+    if(VIEW.Z<=1.001)return;
+    VIEW.cx=VIEW.tcx=VIEW.cx+dx/L.sc;VIEW.cy=VIEW.tcy=VIEW.cy+dy/L.sc;hideHint();
+  },{passive:false});
+  let gs=1;
+  st.addEventListener('gesturestart',e=>{if(!EXP)return;e.preventDefault();gs=1;});
+  st.addEventListener('gesturechange',e=>{if(!EXP)return;e.preventDefault();const p=loc(e);zoomAt(e.scale/gs,p.x,p.y);gs=e.scale;});
+  st.addEventListener('gestureend',e=>{if(EXP)e.preventDefault();});
   st.addEventListener('pointerdown',e=>{if(!EXP||e.target.closest('.zoom'))return;st.setPointerCapture(e.pointerId);ptrs.set(e.pointerId,loc(e));moved=false;
     if(ptrs.size===2){const [a,b]=[...ptrs.values()];pinch={d:Math.hypot(a.x-b.x,a.y-b.y)};}else st.classList.add('dragging');});
   st.addEventListener('pointermove',e=>{if(!EXP||!ptrs.has(e.pointerId))return;const p=loc(e),prev=ptrs.get(e.pointerId);ptrs.set(e.pointerId,p);
