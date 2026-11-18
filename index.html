@@ -1,0 +1,997 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Simulador BST · Árbol Binario de Búsqueda</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@500;700;800&family=Nunito:wght@700;800;900&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#EFEAE2; --ink:#24242A; --sub:#8C8174; --orange:#E8890C; --orange-d:#B85E0B; --orange-l:#FFF0D6;
+  --cream:#F6F1E7; --line:#ECE3D4; --blue:#3866A8; --dark:#2E2E35;
+  --font:"Nunito","Nunito Sans",ui-rounded,"SF Pro Rounded","Segoe UI",system-ui,-apple-system,sans-serif;
+  --mono:"JetBrains Mono","SF Mono",ui-monospace,Menlo,Consolas,"Liberation Mono",monospace;
+}
+*{box-sizing:border-box}
+html,body{margin:0}
+body{background:var(--bg);font-family:var(--font);color:var(--ink);-webkit-font-smoothing:antialiased}
+button{font-family:inherit}
+.page{padding:14px 14px 30px;display:flex;justify-content:center}
+.card{width:100%;max-width:1360px;background:#fff;border-radius:30px;padding:22px 32px 26px;box-shadow:0 1px 0 rgba(0,0,0,.03),0 30px 70px -40px rgba(70,40,0,.35)}
+.top{display:flex;justify-content:space-between;align-items:center;gap:12px}
+.eyebrow{font-weight:900;letter-spacing:.22em;color:var(--orange-d);font-size:14px}
+.brand{font-weight:900;font-size:22px;letter-spacing:-.01em}
+.brand b{color:#F5A00F}
+.headline{display:flex;align-items:flex-start;justify-content:space-between;gap:18px;margin:6px 0 12px;min-height:82px}
+#title{font-size:clamp(24px,2.5vw,36px);font-weight:900;letter-spacing:-.02em;margin:0;line-height:1.1}
+#title.swap{animation:swap .35s ease}
+@keyframes swap{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+#subtitle{font-size:clamp(15px,1.3vw,18px);font-weight:800;color:var(--sub);margin:6px 0 0;line-height:1.38}
+.case{flex:0 0 auto;font-weight:900;font-size:15px;padding:8px 16px;border-radius:999px;border:2px solid #F0B8B2;background:#FCE8E6;color:#C2392F;white-space:nowrap;margin-top:6px}
+.case[hidden]{display:none}
+
+.main{display:grid;align-items:start;grid-template-columns:minmax(380px,535px) minmax(0,1fr);grid-template-areas:"code tree" "expl tree" "out tree";grid-template-rows:auto auto 1fr;gap:22px 30px}
+.win{grid-area:code}.expl{grid-area:expl}.output{grid-area:out}.treebox{grid-area:tree}
+
+/* ventana de código */
+.win{border:1.5px solid var(--line);border-radius:22px;overflow:hidden;background:#fff;box-shadow:0 14px 34px -26px rgba(80,50,10,.45)}
+.win-bar{display:grid;grid-template-columns:70px 1fr 70px;align-items:center;background:var(--cream);padding:12px 18px;border-bottom:1.5px solid var(--line)}
+.dots{display:flex;gap:7px}.dots i{width:12px;height:12px;border-radius:50%;display:block}
+.dots i:nth-child(1){background:#EC6A5E}.dots i:nth-child(2){background:#F4BF4F}.dots i:nth-child(3){background:#3FB950}
+#fname{text-align:center;font-family:var(--mono);color:#8E8578;font-weight:700;font-size:15px}
+.win-body{position:relative;padding:12px 12px 14px 0;overflow-x:auto}
+#lines{font-family:var(--mono);font-size:13.5px;font-weight:700;min-width:max-content}
+.ln{position:relative;display:flex;align-items:center;gap:12px;min-height:1.85em;padding:0 10px 0 36px;margin-left:8px;border-radius:12px;white-space:pre;transition:background .25s}
+.ln.blank{min-height:.85em}
+.ln.on{background:var(--orange-l)}
+.ln.on::before{content:"";position:absolute;left:0;top:6px;bottom:6px;width:4px;border-radius:4px;background:var(--orange)}
+.ln .bdg{margin-left:auto;padding-left:10px}
+.kw{color:#B85E0B}.ty{color:#2B7A8C}.fn{color:#24242A}.id{color:#2F2F36}.num{color:var(--blue)}.pun{color:#A0968A}.dot{color:#D08A3A}
+.cls{font-size:.86em;padding:1px 10px;border-radius:999px;background:var(--orange-l);border:1.5px solid #EDB769;color:#B85E0B}
+.pill{font-family:var(--mono);font-weight:800;font-size:.86em;padding:1px 10px;border-radius:999px;border:2px solid;display:inline-block;animation:pop .28s ease}
+.pill.t{color:#2E8B4E;background:#E3F4E8;border-color:#55B374}
+.pill.f{color:#C9473D;background:#FCE6E4;border-color:#E58178}
+@keyframes pop{from{transform:scale(.6);opacity:0}to{transform:none;opacity:1}}
+.loop{position:absolute;left:0;top:0;width:48px;height:100%;pointer-events:none;overflow:visible}
+.loop path.ar{stroke-dasharray:1;stroke-dashoffset:1;animation:drawln .4s ease forwards}
+.loop path.hd{opacity:0;animation:fadein .2s .3s forwards}
+@keyframes drawln{to{stroke-dashoffset:0}}
+@keyframes fadein{to{opacity:1}}
+
+/* salida */
+.expl{border:1.5px solid var(--line);border-radius:22px;background:#FFFDF9;padding:14px 14px 12px;display:flex;flex-direction:column}
+.expl-head{display:flex;justify-content:space-between;align-items:center;margin:0 4px 8px}
+.expl-head .t{font-weight:900;letter-spacing:.16em;color:var(--orange-d);font-size:13px}
+#explCount{font-family:var(--mono);font-size:12.5px;color:#A0968A;font-weight:700}
+#expl{list-style:none;margin:0;padding:0;overflow-y:auto;max-height:230px;display:flex;flex-direction:column;gap:3px}
+#expl li{display:flex;gap:10px;align-items:flex-start;padding:8px 10px;border-radius:12px;font-size:15px;line-height:1.42;color:#6F6458;cursor:pointer;font-weight:700}
+#expl li:hover{background:#F8F3EA}
+#expl li .n{flex:0 0 24px;height:24px;border-radius:50%;background:var(--cream);border:1.5px solid #E3D8C6;font-family:var(--mono);font-size:11.5px;display:grid;place-items:center;color:#8C8174;margin-top:1px}
+#expl li b{color:var(--ink);font-weight:900}
+#expl li.on{background:var(--orange-l)}
+#expl li.on .n{background:#F39A12;border-color:#E8890C;color:#fff}
+#expl li.fresh{animation:swap .35s ease}
+.output{background:var(--dark);border-radius:22px;padding:16px 20px;color:#EEE9E1;min-height:120px;display:flex;flex-direction:column}
+.out-label{font-weight:900;letter-spacing:.2em;color:#B8B2AA;font-size:14px;margin-bottom:8px}
+.out-lines{font-family:var(--mono);font-size:13.5px;line-height:1.7;overflow-y:auto;max-height:240px;flex:1;-webkit-mask-image:linear-gradient(transparent 0,#000 14px);mask-image:linear-gradient(transparent 0,#000 14px);padding-top:4px}
+.o-cmd{color:#F7B24A}.o-ok{color:#86DBA2}.o-err{color:#FF968C}.o-warn{color:#F7C66B}.o-info{color:#CBC4BA}
+.pr{opacity:.7}
+
+/* escenario del árbol */
+.treebox{display:flex;flex-direction:column;gap:10px;min-width:0}
+.stage-head{display:flex;justify-content:space-between;align-items:center;gap:12px}
+.looks{background:#fff;border:1.5px solid var(--line);border-radius:14px;padding:5px 14px;display:flex;align-items:center;gap:10px;box-shadow:0 8px 20px -16px rgba(80,50,10,.45)}
+.looks span{font-weight:900;letter-spacing:.13em;color:#8C8174;font-size:11.5px}
+.looks b{font-size:24px;font-weight:900;line-height:1.1}
+.looks b.bump{animation:bump .35s ease}
+@keyframes bump{40%{transform:scale(1.25);color:var(--orange)}}
+.stats{font-family:var(--mono);font-size:12px;color:#7D7266;background:var(--cream);border-radius:12px;padding:5px 10px;text-align:right;line-height:1.45}
+.stats b{color:var(--ink)}
+.stats .hint{color:#A0968A}
+.st-tag{display:inline-block;margin-left:4px;font-family:var(--font);font-weight:900;font-size:12px;padding:1px 9px;border-radius:999px}
+.st-tag.good{background:#E3F4E8;color:#2E8B4E}.st-tag.bad{background:#FCE6E4;color:#C9473D}
+.stage{position:relative;min-height:280px}
+#svg{display:block;width:100%;overflow:visible}
+#svg text{font-family:var(--mono);font-weight:800}
+.legend{display:flex;flex-wrap:wrap;gap:4px 12px;font-size:12px;font-weight:800;color:#8C8174;padding:0 4px}
+.legend span{display:inline-flex;align-items:center;gap:6px}
+.lg{width:14px;height:14px;border-radius:50%;border:2.5px solid;display:inline-block}
+.lg.focus{border-color:#EE9418;background:#fff}.lg.found{border-color:#2F9455;background:#E6F5EB}
+.lg.target{border-color:#D2483E;background:#FCE8E6}.lg.succ{border-color:#7356D1;background:#EFEAFC}
+.lg.faded{border-color:#ECE6DD;background:#F8F6F2}.lg.gap{border:2px dashed #CFC2AE;background:#FBF8F3}
+
+/* reproductor */
+.player{display:flex;align-items:center;gap:8px;flex-wrap:wrap;background:var(--cream);border:1.5px solid var(--line);border-radius:18px;padding:8px 12px}
+.ib{width:38px;height:38px;border-radius:14px;border:1.5px solid #E3D8C6;background:#fff;display:grid;place-items:center;cursor:pointer;color:#5F5447;transition:transform .1s,border-color .2s}
+.ib:hover{border-color:var(--orange)}.ib:active{transform:translateY(1px)}
+.ib:disabled{opacity:.4;cursor:default}
+.ib.play{background:#F39A12;border-color:#E8890C;color:#fff;width:54px;box-shadow:0 3px 0 #D07A08}
+.ib svg{width:18px;height:18px}
+.step{display:flex;flex-direction:column;gap:5px;flex:1;min-width:130px;margin:0 6px}
+#stepInfo{font-family:var(--mono);font-weight:700;color:#6F6458;font-size:13.5px}
+.prog{height:6px;background:#EADFCC;border-radius:6px;overflow:hidden}
+.prog i{display:block;height:100%;width:0;background:var(--orange);border-radius:6px;transition:width .3s}
+.seg{display:inline-flex;background:#fff;border:1.5px solid #E3D8C6;border-radius:12px;padding:3px}
+.seg button{border:0;background:transparent;padding:6px 10px;border-radius:9px;font-weight:800;font-size:14px;color:#8C8174;cursor:pointer}
+.seg button.on{background:var(--orange-l);color:var(--orange-d)}
+.rng{width:100%;flex:none!important}
+.speed{display:flex;align-items:center;gap:8px;background:#fff;border:1.5px solid #E3D8C6;border-radius:12px;padding:6px 12px;min-width:220px}
+.sp-ic{font-size:15px;line-height:1}
+#speedVal{font-family:var(--mono);font-size:13.5px;color:var(--orange-d);min-width:42px;text-align:right}
+.rng,#speed{-webkit-appearance:none;appearance:none;flex:1;height:8px;border-radius:8px;background:linear-gradient(to right,#F39A12 var(--p,27%),#EADFCC var(--p,27%));outline:none;cursor:pointer;margin:0}
+.rng::-webkit-slider-thumb,#speed::-webkit-slider-thumb{-webkit-appearance:none;width:22px;height:22px;border-radius:50%;background:#fff;border:3px solid #E8890C;box-shadow:0 2px 6px rgba(120,70,0,.3);cursor:grab}
+.rng::-moz-range-thumb,#speed::-moz-range-thumb{width:16px;height:16px;border-radius:50%;background:#fff;border:3px solid #E8890C;box-shadow:0 2px 6px rgba(120,70,0,.3);cursor:grab}
+.rng:active::-webkit-slider-thumb,#speed:active::-webkit-slider-thumb{cursor:grabbing;transform:scale(1.1)}
+.keys{width:100%;font-size:12.5px;font-weight:800;color:#A0968A;padding:0 4px}
+kbd{font-family:var(--mono);font-size:11.5px;background:#fff;border:1.5px solid #E3D8C6;border-bottom-width:3px;border-radius:6px;padding:0 5px;color:#6F6458}
+
+/* controles */
+.controls{background:#fff;border:1.5px solid var(--line);border-radius:18px;padding:10px 12px;display:flex;flex-direction:column;gap:8px}
+.crow{display:flex;gap:7px;flex-wrap:wrap;align-items:center}
+.crow #list{flex:1;min-width:180px}
+.sep{width:1.5px;height:24px;background:var(--line);margin:0 3px}
+.mini{font-weight:900;font-size:13px;color:#8C8174}
+.crow .seg button{padding:5px 10px;font-size:13.5px}
+.ctl-row{display:flex;gap:12px 20px;flex-wrap:wrap;align-items:flex-end}
+.field{display:flex;flex-direction:column;gap:7px}
+.field.grow{flex:1;min-width:260px}
+.lbl{font-weight:900;font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:#8C8174}
+.input-row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+input[type=text]{font-family:var(--mono);font-size:15px;font-weight:700;color:var(--ink);border:1.5px solid #E3D8C6;border-radius:13px;padding:8px 12px;background:#FFFDF9;outline:none;transition:border-color .2s,box-shadow .2s}
+input[type=text]:focus{border-color:var(--orange);box-shadow:0 0 0 4px #FFE9C7}
+#num{width:86px}#list{flex:1;min-width:210px}
+.btn{font-weight:900;font-size:14.5px;border-radius:13px;padding:8px 14px;border:1.5px solid #E3D8C6;background:#fff;color:var(--ink);cursor:pointer;transition:transform .1s,border-color .2s;white-space:nowrap}
+.btn:hover{border-color:var(--orange)}.btn:active{transform:translateY(1px)}
+.btn.primary{background:#F39A12;border-color:#E8890C;color:#fff;box-shadow:0 3px 0 #D07A08}
+.btn.blue{color:#2F5C9C;border-color:#C9D7EC}.btn.blue:hover{border-color:#3866A8}
+.btn.danger{color:#C9473D;border-color:#F0C2BD}.btn.danger:hover{border-color:#D2483E}
+.btn.sm{padding:7px 12px;font-size:14px}
+.chk{display:inline-flex;align-items:center;gap:7px;font-weight:800;font-size:14px;color:#6F6458;cursor:pointer}
+.chk input{width:17px;height:17px;accent-color:#E8890C}
+.group{display:flex;flex-direction:column;gap:7px}
+.group .row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.chips{display:flex;gap:8px;flex-wrap:wrap}
+.chip{font-weight:800;font-size:14px;padding:8px 14px;border-radius:999px;background:var(--cream);border:1.5px solid #EADFCC;color:#5F5447;cursor:pointer;display:inline-flex;align-items:center;gap:7px;transition:border-color .2s,transform .1s}
+.chip:hover{border-color:var(--orange);color:var(--orange-d)}.chip:active{transform:translateY(1px)}
+.chip i{width:8px;height:8px;border-radius:50%;display:block}
+.chip.star{background:var(--orange-l);border-color:#F2B65B;color:#B85E0B}
+.toast{position:fixed;left:50%;bottom:26px;transform:translate(-50%,30px);background:var(--dark);color:#fff;font-weight:800;padding:12px 20px;border-radius:14px;opacity:0;pointer-events:none;transition:all .3s;z-index:9;max-width:90vw;text-align:center}
+.toast.on{opacity:1;transform:translate(-50%,0)}
+
+@media (max-width:980px){
+  .main{grid-template-columns:minmax(0,1fr);grid-template-areas:"code" "tree" "expl" "out";grid-template-rows:auto}
+  .card{padding:22px 18px;border-radius:24px}
+  .page{padding:10px 8px 40px}
+  .headline{flex-direction:column;min-height:0;gap:8px}
+  .case{margin-top:0}
+}
+@media (max-width:520px){
+  #lines{font-size:12.5px}
+  .looks b{font-size:28px}
+  .brand{font-size:18px}
+}
+@media (prefers-reduced-motion:reduce){*{animation-duration:.01s!important;transition-duration:.01s!important}}
+</style>
+</head>
+<body>
+<div class="page">
+<main class="card">
+  <header class="top">
+    <span class="eyebrow">JAVA</span>
+    <span class="brand">Simulador <b>BST</b></span>
+  </header>
+
+  <section class="headline">
+    <div>
+      <h1 id="title"></h1>
+      <p id="subtitle"></p>
+    </div>
+    <span id="caseTag" class="case" hidden></span>
+  </section>
+
+  <section class="main">
+    <div class="win">
+      <div class="win-bar"><span class="dots"><i></i><i></i><i></i></span><span id="fname">Insertar.java</span><span></span></div>
+      <div class="win-body" id="code"><svg class="loop" id="loop"></svg><div id="lines"></div></div>
+    </div>
+
+    <div class="expl">
+      <div class="expl-head"><span class="t">EXPLICACIÓN PASO A PASO</span><span id="explCount"></span></div>
+      <ol id="expl"></ol>
+    </div>
+
+    <div class="output">
+      <div class="out-label">SALIDA</div>
+      <div class="out-lines" id="out"></div>
+    </div>
+
+    <div class="treebox">
+      <div class="stage-head">
+        <div class="looks"><span id="looksLabel">COMPARACIONES</span><b id="looks">0</b></div>
+        <div class="stats" id="stats"></div>
+      </div>
+      <div class="stage" id="stage">
+        <svg id="svg" xmlns="http://www.w3.org/2000/svg" aria-label="Árbol binario de búsqueda">
+          <defs>
+            <marker id="ahn" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="10" markerHeight="10" markerUnits="userSpaceOnUse" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#4D4C57"/></marker>
+            <marker id="ahf" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="10" markerHeight="10" markerUnits="userSpaceOnUse" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#DDD8D0"/></marker>
+            <marker id="aho" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="13" markerHeight="13" markerUnits="userSpaceOnUse" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#EE9418"/></marker>
+            <marker id="ahv" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="13" markerHeight="13" markerUnits="userSpaceOnUse" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#7356D1"/></marker>
+            <marker id="ahr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="10" markerHeight="10" markerUnits="userSpaceOnUse" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#B85E0B"/></marker>
+            <filter id="sh" x="-60%" y="-60%" width="220%" height="220%"><feDropShadow dx="0" dy="3" stdDeviation="3" flood-color="#6b3d00" flood-opacity=".28"/></filter>
+          </defs>
+          <g id="gEU"></g><g id="gE"></g><g id="gP"></g><g id="gN"></g><g id="gM"></g>
+        </svg>
+      </div>
+      <div class="legend">
+        <span><i class="lg focus"></i>comparando</span>
+        <span><i class="lg found"></i>encontrado / nuevo</span>
+        <span><i class="lg target"></i>a eliminar</span>
+        <span><i class="lg succ"></i>sucesor / predecesor</span>
+        <span><i class="lg faded"></i>no se miró</span>
+        <span><i class="lg gap"></i>hueco vacío (null)</span>
+      </div>
+      <div class="player">
+        <button class="ib" id="bFirst" title="Ir al primer paso" aria-label="Primer paso"><svg viewBox="0 0 24 24" fill="currentColor"><rect x="4" y="5" width="3" height="14" rx="1"/><path d="M20 5.5v13a1 1 0 0 1-1.5.86L8.6 12.86a1 1 0 0 1 0-1.72L18.5 4.64A1 1 0 0 1 20 5.5z"/></svg></button>
+        <button class="ib" id="bPrev" title="Paso anterior (←)" aria-label="Paso anterior"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5l-7 7 7 7"/></svg></button>
+        <button class="ib play" id="bPlay" title="Reproducir / pausar (espacio)" aria-label="Reproducir"></button>
+        <button class="ib" id="bNext" title="Paso siguiente (→)" aria-label="Paso siguiente"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M9 5l7 7-7 7"/></svg></button>
+        <button class="ib" id="bLast" title="Ir al último paso" aria-label="Último paso"><svg viewBox="0 0 24 24" fill="currentColor"><rect x="17" y="5" width="3" height="14" rx="1"/><path d="M4 5.5v13a1 1 0 0 0 1.5.86l9.9-6.5a1 1 0 0 0 0-1.72L5.5 4.64A1 1 0 0 0 4 5.5z"/></svg></button>
+        <div class="step"><span id="stepInfo">Paso 1 de 1</span><input type="range" id="stepRange" class="rng" min="0" max="0" step="1" value="0" aria-label="Elegir paso"></div>
+        <label class="speed" title="Velocidad de la animación">
+          <span class="sp-ic">🐢</span>
+          <input type="range" id="speed" min="0.25" max="3" step="0.05" value="1" aria-label="Velocidad">
+          <span class="sp-ic">🐇</span>
+          <b id="speedVal">1.0×</b>
+        </label>
+        <div class="keys" hidden>Atajos: <kbd>←</kbd> <kbd>→</kbd> paso a paso · <kbd>espacio</kbd> reproducir o pausar</div>
+      </div>
+      <div class="controls">
+          <div class="crow">
+            <input type="text" id="num" inputmode="numeric" placeholder="número" maxlength="3" aria-label="Número">
+            <button class="btn primary" id="bIns">+ Insertar</button>
+            <button class="btn blue" id="bSea">Buscar</button>
+            <button class="btn danger" id="bDel">Eliminar</button>
+            <span class="sep"></span>
+            <button class="btn sm" id="bMin">Mínimo</button>
+            <button class="btn sm" id="bMax">Máximo</button>
+            <button class="btn sm" id="bIno">Inorden</button>
+          </div>
+          <div class="crow">
+            <input type="text" id="list" value="50, 30, 70, 20, 40, 60, 80" aria-label="Lista de números">
+            <button class="btn primary" id="bList">Insertar lista</button>
+            <button class="btn" id="bBuild">Construir de una vez</button>
+          </div>
+          <div class="crow small">
+            <label class="chk"><input type="checkbox" id="fresh" checked> Lista desde árbol vacío</label>
+            <span class="sep"></span>
+            <span class="mini">Dos hijos:</span>
+            <div class="seg" id="modeSeg"><button data-m="suc" class="on">Sucesor</button><button data-m="pred">Predecesor</button></div>
+            <span class="sep"></span>
+            <button class="btn sm" id="bUndo">↶ Deshacer</button>
+            <button class="btn sm" id="bRand">Aleatorio</button>
+            <button class="btn sm danger" id="bClear">Vaciar</button>
+          </div>
+        </div>
+    </div>
+  </section>
+
+</main>
+</div>
+<div class="toast" id="toast" role="status"></div>
+
+<script>
+"use strict";
+const $=s=>document.querySelector(s);
+const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
+const lerp=(a,b,t)=>a+(b-a)*t;
+const ease=t=>t<.5?4*t*t*t:1-Math.pow(-2*t+2,3)/2;
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const REDUCE=window.matchMedia&&matchMedia('(prefers-reduced-motion: reduce)').matches;
+const MAX_NODES=24, DUR=640, DWELL=1750;
+const SLIDE=[50,30,70,20,40,60,80];
+
+/* ================= Modelo del árbol ================= */
+let NEXT_ID=1;
+const emptyTree=()=>({root:null,nodes:{}});
+function clone(t){const n={};for(const id in t.nodes){const x=t.nodes[id];n[id]={key:x.key,l:x.l,r:x.r};}return{root:t.root,nodes:n};}
+function newNode(t,key){const id='n'+(NEXT_ID++);t.nodes[id]={key,l:null,r:null};return id;}
+function setChild(t,p,side,c){if(p==null)t.root=c;else t.nodes[p][side]=c;}
+function inorderIds(t){const out=[];(function go(id){if(!id)return;go(t.nodes[id].l);out.push(id);go(t.nodes[id].r);})(t.root);return out;}
+const keysInorder=t=>inorderIds(t).map(id=>t.nodes[id].key);
+function height(t){const h=id=>id?1+Math.max(h(t.nodes[id].l),h(t.nodes[id].r)):-1;return h(t.root);}
+const count=t=>Object.keys(t.nodes).length;
+function insertInstant(t,k){if(!t.root){t.root=newNode(t,k);return;}let c=t.root;for(;;){const n=t.nodes[c];if(k===n.key)return;const s=k<n.key?'l':'r';if(!n[s]){n[s]=newNode(t,k);return;}c=n[s];}}
+function buildInstant(keys){const t=emptyTree();keys.forEach(k=>insertInstant(t,k));return t;}
+function shape(t){const go=id=>id?'('+t.nodes[id].key+go(t.nodes[id].l)+go(t.nodes[id].r)+')':'.';return go(t.root);}
+const plural=(n,a,b)=>n===1?a:b;
+const comps=n=>`${n} ${plural(n,'comparación','comparaciones')}`;
+function listEs(a){if(a.length<=1)return a.join('');return a.slice(0,-1).join(', ')+' ni '+a[a.length-1];}
+
+/* ================= Código mostrado ================= */
+const CODE={
+  insertar:{name:'Insertar.java',loopTo:3,lines:[
+    {c:'class Nodo { int clave; Nodo izq, der; }'},{c:''},
+    {c:'Nodo insertar(Nodo nodo, int k) {'},
+    {c:'    if (nodo == null)'},
+    {c:'        return new Nodo(k);'},
+    {c:'    if (k < nodo.clave)'},
+    {c:'        nodo.izq = insertar(nodo.izq, k);'},
+    {c:'    else if (k > nodo.clave)'},
+    {c:'        nodo.der = insertar(nodo.der, k);'},
+    {c:'    return nodo;'},
+    {c:'}'},
+    {c:'raiz = insertar(raiz, {k});'}]},
+  buscar:{name:'Buscar.java',loopTo:1,lines:[
+    {c:'Nodo buscar(Nodo nodo, int k) {'},
+    {c:'    if (nodo == null)'},
+    {c:'        return null;'},
+    {c:'    if (k == nodo.clave)'},
+    {c:'        return nodo;'},
+    {c:'    if (k < nodo.clave)'},
+    {c:'        return buscar(nodo.izq, k);'},
+    {c:'    return buscar(nodo.der, k);'},
+    {c:'}'},
+    {c:'buscar(raiz, {k});'}]},
+  eliminar:{name:'Eliminar.java',loopTo:1,lines:[
+    {c:'Nodo eliminar(Nodo nodo, int k) {'},
+    {c:'    if (nodo == null) return null;'},
+    {c:'    if (k < nodo.clave)'},
+    {c:'        nodo.izq = eliminar(nodo.izq, k);'},
+    {c:'    else if (k > nodo.clave)'},
+    {c:'        nodo.der = eliminar(nodo.der, k);'},
+    {c:'    else {'},
+    {c:'        if (nodo.izq == null) return nodo.der;'},
+    {c:'        if (nodo.der == null) return nodo.izq;'},
+    {c:'        Nodo s = minimo(nodo.der);'},
+    {c:'        nodo.clave = s.clave;'},
+    {c:'        nodo.der = eliminar(nodo.der, s.clave);'},
+    {c:'    }'},
+    {c:'    return nodo;'},
+    {c:'}'},
+    {c:'raiz = eliminar(raiz, {k});'}]},
+  minimo:{name:'Minimo.java',loopTo:1,lines:[
+    {c:'Nodo minimo(Nodo nodo) {'},
+    {c:'    while (nodo.izq != null)'},
+    {c:'        nodo = nodo.izq;'},
+    {c:'    return nodo;'},
+    {c:'}'},
+    {c:'minimo(raiz);'}]},
+  maximo:{name:'Maximo.java',loopTo:1,lines:[
+    {c:'Nodo maximo(Nodo nodo) {'},
+    {c:'    while (nodo.der != null)'},
+    {c:'        nodo = nodo.der;'},
+    {c:'    return nodo;'},
+    {c:'}'},
+    {c:'maximo(raiz);'}]},
+  inorden:{name:'Inorden.java',loopTo:1,lines:[
+    {c:'void inorden(Nodo nodo) {'},
+    {c:'    if (nodo == null) return;'},
+    {c:'    inorden(nodo.izq);'},
+    {c:'    System.out.println(nodo.clave);'},
+    {c:'    inorden(nodo.der);'},
+    {c:'}'},
+    {c:'inorden(raiz);'}]}
+};
+CODE.eliminarPred={name:'Eliminar.java',loopTo:1,lines:CODE.eliminar.lines.map((l,i)=>
+  i===9?{c:'        Nodo p = maximo(nodo.izq);'}:i===10?{c:'        nodo.clave = p.clave;'}:i===11?{c:'        nodo.izq = eliminar(nodo.izq, p.clave);'}:l)};
+
+const KW=new Set(['class','int','void','if','else','return','while','new','null']);
+const TY=new Set(['Nodo','System']);
+function hl(src,k){
+  if(!src)return '';
+  const re=/(\s+)|(\{k\})|([A-Za-z_][A-Za-z0-9_]*)|(\d+)|(.)/g;let m,out='';
+  while((m=re.exec(src))){
+    if(m[1]){out+=m[1];continue;}
+    if(m[2]){out+=`<span class="num">${esc(k)}</span>`;continue;}
+    if(m[3]){const w=m[3];let c='id';if(KW.has(w))c='kw';else if(TY.has(w))c='ty';else if(src[re.lastIndex]==='(')c='fn';out+=`<span class="${c}">${w}</span>`;continue;}
+    if(m[4]){out+=`<span class="num">${m[4]}</span>`;continue;}
+    out+=`<span class="${m[5]==='.'?'dot':'pun'}">${esc(m[5])}</span>`;
+  }
+  return out;
+}
+
+/* ================= Fotogramas ================= */
+function mkFrame(o){return Object.assign({file:'insertar',variant:'suc',line:-1,badges:{},loop:false,callArg:'k',title:'',subtitle:'',caseTag:'',
+  markers:[],path:[],spath:[],visited:[],dim:false,states:{},gaps:{},fly:null,looks:0,looksLabel:'COMPARACIONES'},o);}
+function newCtx(tree,log){
+  const ctx={tree:clone(tree),log:log.slice(),frames:[]};
+  ctx.push=o=>ctx.frames.push(mkFrame(Object.assign({},o,{tree:clone(ctx.tree),log:ctx.log.slice()})));
+  return ctx;
+}
+
+/* ---------- Insertar ---------- */
+function opInsert(ctx,k){
+  const t=ctx.tree,base={file:'insertar',callArg:k};let looks=0;const path=[],visited=[];
+  ctx.log.push({t:'cmd',s:`insertar(${k})`});
+  ctx.push({...base,line:11,title:`Insertar ${k}`,subtitle:'insertar() baja comparando hasta encontrar un hueco vacío',markers:[{start:true,v:k}]});
+  if(!t.root){
+    ctx.push({...base,line:4,badges:{3:true},title:`Árbol vacío: ${k} será la raíz`,subtitle:'nodo == null, así que se crea new Nodo(k) justo ahí',markers:[{gap:{root:true},v:k}],gaps:{root:'target'}});
+    const id=newNode(t,k);t.root=id;
+    ctx.log.push({t:'ok',s:`→ ${k} es la raíz`});
+    ctx.push({...base,line:11,title:`${k} es la raíz`,subtitle:'La primera clave que llega siempre queda arriba de todo',states:{[id]:'new'}});
+    return;
+  }
+  let cur=t.root;
+  for(;;){
+    const n=t.nodes[cur];looks++;visited.push(cur);
+    if(k===n.key){
+      ctx.log.push({t:'warn',s:`→ ${k} ya existe, no se inserta · ${comps(looks)}`});
+      ctx.push({...base,line:9,badges:{3:false,5:false,7:false},title:`${k} = ${n.key}: ya existe`,subtitle:'El BST clásico no guarda claves repetidas, así que no se hace nada',markers:[{at:cur,v:k}],path:path.slice(),visited:visited.slice(),dim:true,states:{[cur]:'dup'},looks});
+      return;
+    }
+    const side=k<n.key?'l':'r',child=n[side];
+    const fr={...base,line:side==='l'?6:8,badges:side==='l'?{3:false,5:true}:{3:false,5:false,7:true},loop:true,
+      title:side==='l'?`${k} < ${n.key}: ve a la izquierda`:`${k} > ${n.key}: ve a la derecha`,
+      subtitle:side==='l'?'Todo lo que está a la izquierda es menor':'Todo lo que está a la derecha es mayor',
+      markers:[{at:cur,v:k}],visited:visited.slice(),dim:true,states:{[cur]:'focus'},looks};
+    if(child){path.push(cur+'>'+child);fr.path=path.slice();}
+    else{fr.path=path.slice();fr.gaps={[cur+':'+side]:'target'};}
+    ctx.push(fr);
+    if(!child){
+      const lado=side==='l'?'izquierdo':'derecho';
+      ctx.push({...base,line:4,badges:{3:true},title:`Hueco vacío: aquí va ${k}`,subtitle:`nodo == null: se crea new Nodo(${k}) como hijo ${lado} de ${n.key}`,markers:[{gap:{p:cur,s:side},v:k}],path:path.slice(),visited:visited.slice(),dim:true,gaps:{[cur+':'+side]:'target'},looks});
+      const id=newNode(t,k);n[side]=id;path.push(cur+'>'+id);
+      ctx.log.push({t:'ok',s:`→ hijo ${lado} de ${n.key} · ${comps(looks)}`});
+      ctx.push({...base,line:11,title:`${k} quedó como hoja`,subtitle:`Es hijo ${lado} de ${n.key}. El nodo nuevo siempre entra como hoja y ningún otro se mueve`,path:path.slice(),visited:[...visited,id],states:{[id]:'new'},looks});
+      return;
+    }
+    cur=child;
+  }
+}
+
+/* ---------- Buscar ---------- */
+function opSearch(ctx,k){
+  const t=ctx.tree,base={file:'buscar',callArg:k};let looks=0;const path=[],visited=[];
+  ctx.log.push({t:'cmd',s:`buscar(${k})`});
+  ctx.push({...base,line:9,title:`Buscar ${k}`,subtitle:'buscar() empieza en la raíz y en cada nodo elige un solo lado',markers:[{start:true,v:k}]});
+  if(!t.root){
+    ctx.log.push({t:'err',s:'→ null (el árbol está vacío)'});
+    ctx.push({...base,line:2,badges:{1:true},title:'El árbol está vacío',subtitle:`${k} no puede estar: buscar() devuelve null`,markers:[{gap:{root:true},v:k}],gaps:{root:'miss'}});
+    return;
+  }
+  let cur=t.root;
+  for(;;){
+    const n=t.nodes[cur];looks++;visited.push(cur);
+    if(k===n.key){
+      const seen=new Set(visited.map(id=>t.nodes[id].key));
+      const unseen=keysInorder(t).filter(x=>!seen.has(x));
+      ctx.log.push({t:'ok',s:`→ encontrado · ${comps(looks)}`});
+      ctx.push({...base,line:4,badges:{1:false,3:true},title:`${k} = ${n.key}: ¡encontrado!`,
+        subtitle:unseen.length?`Bastaron ${comps(looks)}, sin mirar ${listEs(unseen)}`:`Bastaron ${comps(looks)}`,
+        markers:[{at:cur,v:k}],path:path.slice(),visited:visited.slice(),dim:true,states:{[cur]:'found'},looks});
+      return;
+    }
+    const side=k<n.key?'l':'r',child=n[side];
+    const fr={...base,line:side==='l'?6:7,badges:side==='l'?{1:false,3:false,5:true}:{1:false,3:false,5:false},loop:true,
+      title:side==='l'?`${k} < ${n.key}: ve a la izquierda`:`${k} > ${n.key}: ve a la derecha`,
+      subtitle:side==='l'?'Todo lo que está a la izquierda es menor':'Todo lo que está a la derecha es mayor',
+      markers:[{at:cur,v:k}],visited:visited.slice(),dim:true,states:{[cur]:'focus'},looks};
+    if(child){path.push(cur+'>'+child);fr.path=path.slice();}
+    else{fr.path=path.slice();fr.gaps={[cur+':'+side]:'miss'};}
+    ctx.push(fr);
+    if(!child){
+      ctx.log.push({t:'err',s:`→ null: ${k} no existe · ${comps(looks)}`});
+      ctx.push({...base,line:2,badges:{1:true},title:`Hueco vacío: ${k} no está`,subtitle:`Si existiera, tendría que estar justo aquí. Se hicieron ${comps(looks)}`,markers:[{gap:{p:cur,s:side},v:k}],path:path.slice(),visited:visited.slice(),dim:true,gaps:{[cur+':'+side]:'miss'},looks});
+      return;
+    }
+    cur=child;
+  }
+}
+
+/* ---------- Eliminar ---------- */
+function opDelete(ctx,k,mode){
+  const t=ctx.tree,suc=mode!=='pred';
+  const base={file:'eliminar',variant:suc?'suc':'pred',callArg:k};
+  let looks=0;const path=[],visited=[];
+  ctx.log.push({t:'cmd',s:`eliminar(${k})`});
+  ctx.push({...base,line:15,title:`Eliminar ${k}`,subtitle:'Primero hay que encontrarlo, igual que en buscar()',markers:[{start:true,v:k}]});
+  if(!t.root){
+    ctx.log.push({t:'err',s:'→ el árbol está vacío'});
+    ctx.push({...base,line:1,badges:{1:true},title:'El árbol está vacío',subtitle:'No hay nada que eliminar',markers:[{gap:{root:true},v:k}],gaps:{root:'miss'}});
+    return;
+  }
+  let parent=null,pside=null,cur=t.root;
+  for(;;){
+    const n=t.nodes[cur];looks++;visited.push(cur);
+    if(k===n.key)break;
+    const side=k<n.key?'l':'r',child=n[side];
+    const fr={...base,line:side==='l'?3:5,badges:side==='l'?{1:false,2:true}:{1:false,2:false,4:true},loop:true,
+      title:side==='l'?`${k} < ${n.key}: ve a la izquierda`:`${k} > ${n.key}: ve a la derecha`,
+      subtitle:side==='l'?'Si existe, tiene que estar a la izquierda':'Si existe, tiene que estar a la derecha',
+      markers:[{at:cur,v:k}],visited:visited.slice(),dim:true,states:{[cur]:'focus'},looks};
+    if(child){path.push(cur+'>'+child);fr.path=path.slice();}
+    else{fr.path=path.slice();fr.gaps={[cur+':'+side]:'miss'};}
+    ctx.push(fr);
+    if(!child){
+      ctx.log.push({t:'err',s:`→ ${k} no existe · ${comps(looks)}`});
+      ctx.push({...base,line:1,badges:{1:true},title:`${k} no está en el árbol`,subtitle:'Llegamos a un hueco vacío: no hay nada que eliminar',markers:[{gap:{p:cur,s:side},v:k}],path:path.slice(),visited:visited.slice(),dim:true,gaps:{[cur+':'+side]:'miss'},looks});
+      return;
+    }
+    parent=cur;pside=side;cur=child;
+  }
+  const n=t.nodes[cur],nch=(n.l?1:0)+(n.r?1:0);
+  const caseTag=['Caso 1 · Hoja','Caso 2 · Un hijo','Caso 3 · Dos hijos'][nch];
+  const vis=visited.slice();
+  const C=()=>({...base,path:path.slice(),visited:vis.slice(),dim:true,looks,caseTag});
+  ctx.push({...C(),line:6,badges:{1:false,2:false,4:false},
+    title:[`¡Encontrado! ${k} es una hoja`,`¡Encontrado! ${k} tiene un solo hijo`,`¡Encontrado! ${k} tiene dos hijos`][nch],
+    subtitle:'Lo que pasa ahora depende de cuántos hijos tenga',markers:[{at:cur,v:k}],states:{[cur]:'target'}});
+
+  if(nch===0){
+    ctx.push({...C(),line:7,badges:{7:true},title:'Caso 1 · Hoja: se quita directamente',
+      subtitle:parent?`return nodo.der devuelve null: ${t.nodes[parent].key} se queda con un hueco vacío`:'Era el único nodo: el árbol queda vacío',states:{[cur]:'target'}});
+    setChild(t,parent,pside,null);delete t.nodes[cur];
+    ctx.log.push({t:'ok',s:`→ caso 1 (hoja) · ${comps(looks)}`});
+    ctx.push({...C(),line:15,dim:false,path:path.filter(e=>!e.endsWith('>'+cur)),title:`Listo: ${k} eliminado`,
+      subtitle:'Ningún otro nodo se movió y el árbol sigue ordenado',gaps:parent?{[parent+':'+pside]:'target'}:{root:'target'}});
+    return;
+  }
+  if(nch===1){
+    const leftnull=!n.l,ch=n.l||n.r,ck=t.nodes[ch].key;vis.push(ch);
+    ctx.push({...C(),line:leftnull?7:8,badges:leftnull?{7:true}:{7:false,8:true},title:`Caso 2 · Un hijo: ${ck} ocupa su lugar`,
+      subtitle:leftnull?'return nodo.der: su único hijo (el derecho) sube con todo lo que cuelga de él':'return nodo.izq: su único hijo (el izquierdo) sube con todo lo que cuelga de él',
+      states:{[cur]:'target',[ch]:'moving'},path:[...path,cur+'>'+ch],visited:vis.slice()});
+    setChild(t,parent,pside,ch);delete t.nodes[cur];
+    ctx.log.push({t:'ok',s:`→ caso 2: ${ck} sube a su lugar · ${comps(looks)}`});
+    const np=path.filter(e=>!e.endsWith('>'+cur));if(parent)np.push(parent+'>'+ch);
+    ctx.push({...C(),line:15,dim:false,path:np,title:`Listo: ${ck} subió al lugar de ${k}`,
+      subtitle:'Es como sacar un eslabón de una cadena y unir los extremos: la regla de orden se mantiene',states:{[ch]:'new'}});
+    return;
+  }
+  /* caso 3: dos hijos */
+  const first=suc?'r':'l',then=suc?'l':'r',who=suc?'sucesor':'predecesor',sym=suc?'s':'p';
+  const sm=id=>({at:id,v:sym,kind:'s',label:who});
+  ctx.push({...C(),line:9,badges:{7:false,8:false},title:`Caso 3 · Dos hijos: buscamos su ${who}`,
+    subtitle:suc?'El sucesor es el menor de su lado derecho: una vez a la derecha y luego siempre a la izquierda'
+                :'El predecesor es el mayor de su lado izquierdo: una vez a la izquierda y luego siempre a la derecha',
+    markers:[{at:cur,v:k}],states:{[cur]:'target'}});
+  let s=n[first],sp=cur,ss=first;const spath=[cur+'>'+s];vis.push(s);
+  ctx.push({...C(),line:9,badges:{7:false,8:false},title:`Una vez a la ${suc?'derecha':'izquierda'}: llegamos a ${t.nodes[s].key}`,
+    subtitle:suc?`Todo lo que está de este lado es mayor que ${k}`:`Todo lo que está de este lado es menor que ${k}`,
+    markers:[{at:cur,v:k},sm(s)],spath:spath.slice(),visited:vis.slice(),states:{[cur]:'target',[s]:'succFocus'}});
+  while(t.nodes[s][then]){
+    const nx=t.nodes[s][then];spath.push(s+'>'+nx);sp=s;ss=then;s=nx;vis.push(s);
+    ctx.push({...C(),line:9,badges:{7:false,8:false},title:`Siempre a la ${suc?'izquierda':'derecha'}: ${t.nodes[s].key}`,
+      subtitle:`${t.nodes[sp].key} tiene hijo ${suc?'izquierdo':'derecho'}, o sea que hay algo ${suc?'más pequeño':'más grande'}: seguimos bajando`,
+      markers:[{at:cur,v:k},sm(s)],spath:spath.slice(),visited:vis.slice(),states:{[cur]:'target',[s]:'succFocus'}});
+  }
+  const sk=t.nodes[s].key;
+  ctx.push({...C(),line:9,badges:{7:false,8:false},title:`${sk} no tiene hijo ${suc?'izquierdo':'derecho'}: es el ${who}`,
+    subtitle:suc?`Es el valor que sigue después de ${k}: mayor que todo su lado izquierdo y menor que el resto del derecho`
+                :`Es el valor justo antes de ${k}: menor que todo su lado derecho y mayor que el resto del izquierdo`,
+    markers:[{at:cur,v:k},sm(s)],spath:spath.slice(),visited:vis.slice(),states:{[cur]:'target',[s]:'succ'}});
+  const old=n.key;n.key=sk;
+  ctx.push({...C(),line:10,title:`Copiamos ${sk} en el lugar de ${k}`,subtitle:`Ahora hay dos ${sk}: el de arriba se queda y el de abajo sobra`,
+    fly:{from:s,to:cur,v:sk,old},spath:spath.slice(),visited:vis.slice(),states:{[cur]:'replaced',[s]:'succ'}});
+  const sc=t.nodes[s][first];
+  if(sc)vis.push(sc);
+  ctx.push({...C(),line:11,title:`Ahora borramos el ${sk} de abajo`,
+    subtitle:sc?`Tiene un solo hijo (${t.nodes[sc].key}), así que es el caso 2: ese hijo sube a su lugar`
+               :`Es una hoja, así que es el caso 1: se quita y listo`,
+    spath:spath.slice(),visited:vis.slice(),states:Object.assign({[cur]:'replaced',[s]:'target'},sc?{[sc]:'moving'}:{})});
+  t.nodes[sp][ss]=sc||null;delete t.nodes[s];
+  ctx.log.push({t:'ok',s:`→ caso 3: lo reemplaza su ${who} ${sk}`});
+  ctx.log.push({t:'info',s:`inorden: ${keysInorder(t).join(' ')}`});
+  ctx.push({...base,caseTag,line:15,looks,title:'Listo: el árbol sigue siendo un BST',
+    subtitle:`${sk} quedó en el lugar de ${k} y el recorrido inorden sigue saliendo ordenado`,
+    states:Object.assign({[cur]:'new'},sc?{[sc]:'new'}:{})});
+}
+
+/* ---------- Mínimo / máximo ---------- */
+function opExtreme(ctx,isMin){
+  const t=ctx.tree,file=isMin?'minimo':'maximo',side=isMin?'l':'r',word=isMin?'izquierda':'derecha',
+        wordH=isMin?'izquierdo':'derecho',name=isMin?'mínimo':'máximo',more=isMin?'más pequeño':'más grande',v=isMin?'mín':'máx';
+  const base={file,looksLabel:'NODOS VISITADOS'};let looks=0;const path=[],visited=[];
+  ctx.log.push({t:'cmd',s:`${file}(raiz)`});
+  ctx.push({...base,line:5,title:`Buscar el ${name}`,subtitle:`El ${name} siempre está lo más a la ${word} posible`,markers:[{start:true,v}]});
+  if(!t.root){ctx.log.push({t:'err',s:'→ el árbol está vacío'});ctx.push({...base,line:5,title:'El árbol está vacío',subtitle:`No hay ${name}`,gaps:{root:'miss'}});return;}
+  let cur=t.root;
+  while(t.nodes[cur][side]){
+    looks++;visited.push(cur);const nx=t.nodes[cur][side];path.push(cur+'>'+nx);
+    ctx.push({...base,line:2,badges:{1:true},loop:true,title:`${t.nodes[cur].key} tiene hijo ${wordH}: seguimos bajando`,
+      subtitle:`Hay algo ${more} a la ${word}`,markers:[{at:cur,v}],path:path.slice(),visited:visited.slice(),dim:true,states:{[cur]:'focus'},looks});
+    cur=nx;
+  }
+  looks++;visited.push(cur);
+  const key=t.nodes[cur].key;
+  ctx.log.push({t:'ok',s:`→ ${key}`});
+  ctx.push({...base,line:3,badges:{1:false},title:`El ${name} es ${key}`,subtitle:`${key} no tiene hijo ${wordH}: no hay nada ${more}`,
+    markers:[{at:cur,v}],path:path.slice(),visited:visited.slice(),dim:true,states:{[cur]:'found'},looks});
+}
+
+/* ---------- Inorden ---------- */
+function opInorder(ctx){
+  const t=ctx.tree,base={file:'inorden',looksLabel:'NODOS VISITADOS'};
+  ctx.log.push({t:'cmd',s:'inorden(raiz)'});
+  ctx.push({...base,line:6,title:'Recorrido inorden',subtitle:'Primero todo lo de la izquierda, luego el nodo y después todo lo de la derecha'});
+  if(!t.root){ctx.log.push({t:'err',s:'→ no imprime nada (árbol vacío)'});ctx.push({...base,line:1,badges:{1:true},title:'El árbol está vacío',subtitle:'No hay nada que imprimir',gaps:{root:'miss'}});return;}
+  const ids=inorderIds(t),printed=[];ctx.log.push({t:'ok',s:''});const li=ctx.log.length-1;
+  ids.forEach((id,i)=>{
+    const n=t.nodes[id];printed.push(n.key);ctx.log[li]={t:'ok',s:printed.join(' ')};
+    const states={};ids.slice(0,i).forEach(x=>states[x]='done');states[id]='found';
+    ctx.push({...base,line:3,title:`Imprime ${n.key}`,
+      subtitle:n.l?'Todo su lado izquierdo ya se imprimió; después sigue su lado derecho':'No tiene nada a su izquierda, así que se imprime de una vez',
+      markers:[{at:id,v:n.key}],states,looks:i+1});
+  });
+  const states={};ids.forEach(x=>states[x]='done');
+  ctx.push({...base,line:6,title:'Los datos salieron ordenados',subtitle:'El inorden de un BST da las claves de menor a mayor sin ordenar nada aparte',states,looks:ids.length});
+}
+
+/* ================= Estado de reproducción ================= */
+let frames=[],idx=0,playing=false,timer=null,speed=1,MODE='suc';
+const history=[];
+function finalState(){const f=frames[frames.length-1];return{tree:f.tree,log:f.log};}
+function run(fn,opt={}){
+  const autoplay=opt.autoplay!==false;
+  const st=finalState();
+  history.push(st.tree);if(history.length>60)history.shift();
+  const ctx=newCtx(st.tree,st.log);
+  fn(ctx);
+  if(!ctx.frames.length)return;
+  frames=ctx.frames;pause();show(0);
+  if(autoplay&&frames.length>1){playing=true;schedule();updatePlayer();}
+}
+function schedule(){clearTimeout(timer);if(!playing)return;timer=setTimeout(()=>{if(idx<frames.length-1){show(idx+1);schedule();}else pause();},DWELL/speed);}
+function play(){if(idx>=frames.length-1)show(0);playing=true;schedule();updatePlayer();}
+function pause(){playing=false;clearTimeout(timer);updatePlayer();}
+function togglePlay(){playing?pause():play();}
+function next(){pause();if(idx<frames.length-1)show(idx+1);}
+function prev(){pause();if(idx>0)show(idx-1);}
+
+/* ================= Render de textos y código ================= */
+let codeKey='',loopKey='';
+function renderCode(f){
+  const fileId=f.file==='eliminar'&&f.variant==='pred'?'eliminarPred':f.file;
+  const spec=CODE[fileId];
+  const key=fileId+'|'+f.callArg;
+  const box=$('#lines');
+  if(key!==codeKey){
+    codeKey=key;loopKey='';
+    $('#fname').textContent=spec.name;
+    box.innerHTML=spec.lines.map((l,i)=>`<div class="ln${l.c?'':' blank'}" data-i="${i}"><span class="src">${hl(l.c,f.callArg)}</span>${l.pill?`<span class="cls">${esc(l.pill)}</span>`:''}<span class="bdg" data-v=""></span></div>`).join('');
+  }
+  const lines=box.children;
+  for(let i=0;i<lines.length;i++){
+    const ln=lines[i];ln.classList.toggle('on',i===f.line);
+    const b=ln.querySelector('.bdg');const v=f.badges[i];const want=v===undefined?'':(v?'t':'f');
+    if(b.dataset.v!==want){b.dataset.v=want;b.innerHTML=want?`<span class="pill ${want}">${v?'true':'false'}</span>`:'';}
+  }
+  const svgL=$('#loop');
+  if(!f.loop||f.line<0){svgL.innerHTML='';loopKey='';return;}
+  const lk=fileId+':'+f.line+':'+idx;
+  if(lk===loopKey)return;loopKey=lk;
+  const a=lines[f.line],b=lines[spec.loopTo];
+  const ya=a.offsetTop+a.offsetHeight/2,yb=b.offsetTop+b.offsetHeight/2;
+  svgL.innerHTML=`<path class="ar" pathLength="1" d="M 30 ${ya} H 20 V ${yb} H 33" fill="none" stroke="#E8890C" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+    <path class="hd" d="M 31 ${yb-6} L 41 ${yb} L 31 ${yb+6} Z" fill="#E8890C" stroke="#E8890C" stroke-width="2" stroke-linejoin="round"/>`;
+}
+function renderTexts(f){
+  const h=$('#title');
+  if(h.textContent!==f.title){h.textContent=f.title;h.classList.remove('swap');void h.offsetWidth;h.classList.add('swap');}
+  $('#subtitle').textContent=f.subtitle;
+  const ct=$('#caseTag');if(f.caseTag){ct.textContent=f.caseTag;ct.hidden=false;}else ct.hidden=true;
+  $('#looksLabel').textContent=f.looksLabel;
+  const lk=$('#looks');
+  if(lk.textContent!==String(f.looks)){lk.textContent=f.looks;lk.classList.remove('bump');void lk.offsetWidth;lk.classList.add('bump');}
+  const t=f.tree,n=count(t),hh=height(t),hmin=n?Math.floor(Math.log2(n)):0;
+  let tag='';
+  if(n>=3&&hh===n-1)tag='<span class="st-tag bad">se volvió una lista</span>';
+  else if(n>=1&&hh===hmin)tag='<span class="st-tag good">altura mínima</span>';
+  $('#stats').innerHTML=n?`<div>nodos <b>${n}</b> · altura <b>${hh}</b> <span class="hint">(mín. ${hmin})</span> ${tag}</div>`:'<div>árbol vacío</div><div class="hint">raiz = null</div>';
+  const box=$('#out');
+  const html=f.log.slice(-60).map(l=>`<div class="o-${l.t}">${l.t==='cmd'?'<span class="pr">›</span> ':''}${esc(l.s)}</div>`).join('');
+  if(box._h!==html){box.innerHTML=html;box._h=html;box.scrollTop=box.scrollHeight;}
+}
+const ICON_PLAY='<svg viewBox="0 0 24 24" fill="currentColor"><path d="M7 4.8v14.4a1 1 0 0 0 1.53.85l11.2-7.2a1 1 0 0 0 0-1.7L8.53 3.95A1 1 0 0 0 7 4.8z"/></svg>';
+const ICON_PAUSE='<svg viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="4.5" width="4.2" height="15" rx="1.2"/><rect x="13.8" y="4.5" width="4.2" height="15" rx="1.2"/></svg>';
+function updatePlayer(){
+  const N=frames.length;
+  $('#stepInfo').textContent=`Paso ${idx+1} de ${N}`;
+  const sr=$('#stepRange');sr.max=Math.max(0,N-1);sr.value=idx;sr.disabled=N<2;sr.style.setProperty('--p',(N>1?idx/(N-1)*100:100)+'%');
+  $('#bPrev').disabled=$('#bFirst').disabled=idx===0;
+  $('#bNext').disabled=$('#bLast').disabled=idx>=N-1;
+  const bp=$('#bPlay');bp.innerHTML=playing?ICON_PAUSE:ICON_PLAY;bp.setAttribute('aria-label',playing?'Pausar':'Reproducir');
+}
+const endP=t=>/[.!?:]$/.test(t)?t:t+'.';
+let explPrev=-1;
+function renderExpl(){
+  const ol=$('#expl');
+  ol.innerHTML=frames.slice(0,idx+1).map((f,i)=>`<li data-i="${i}" class="${i===idx?'on':''}${i===idx&&idx===explPrev+1?' fresh':''}"><span class="n">${i+1}</span><span><b>${esc(endP(f.title))}</b> ${f.subtitle?esc(endP(f.subtitle)):''}</span></li>`).join('');
+  ol.scrollTop=ol.scrollHeight;explPrev=idx;
+  $('#explCount').textContent=`paso ${idx+1} de ${frames.length}`;
+}
+$('#expl').onclick=e=>{const li=e.target.closest('li');if(!li)return;pause();show(+li.dataset.i);};
+function show(i,instant){
+  idx=i;const f=frames[i];
+  renderCode(f);renderTexts(f);updatePlayer();renderExpl();
+  startTween(f,instant);
+}
+
+/* ================= Motor de animación del árbol ================= */
+const NS='http://www.w3.org/2000/svg';
+const svg=$('#svg'),gEU=$('#gEU'),gE=$('#gE'),gP=$('#gP'),gN=$('#gN'),gM=$('#gM');
+const pool=new Map(),used=new Set();
+function el(key,tag,parent){let e=pool.get(key);if(!e){e=document.createElementNS(NS,tag);parent.appendChild(e);pool.set(key,e);}used.add(key);return e;}
+function attrs(e,o){for(const k in o)e.setAttribute(k,o[k]);}
+function mk(tag){return document.createElementNS(NS,tag);}
+let W=Math.max(280,$('#stage').clientWidth||800),anim=null,lastF=null;
+
+function layout(tree){
+  const ids=inorderIds(tree),n=ids.length,rank={},depth={};ids.forEach((id,i)=>rank[id]=i);
+  let maxD=-1;(function go(id,d){if(!id)return;depth[id]=d;if(d>maxD)maxD=d;go(tree.nodes[id].l,d+1);go(tree.nodes[id].r,d+1);})(tree.root,0);
+  const baseH=W<560?300:330,padX=16,slots=Math.max(2*n+1,3);
+  const half=Math.min(48,(W-2*padX)/slots);
+  const r0=clamp(half*1.25,12,25);
+  const y0=Math.max(50,r0*2.3+14),pb=22;
+  const rows=Math.max(maxD+2,2);
+  const lv=clamp((baseH-y0-pb)/(rows-1),52,96);
+  const r=clamp(Math.min(r0,lv*0.34),12,25);
+  const H=Math.max(baseH,y0+(rows-1)*lv+pb);
+  const x0=(W-(2*n+1)*half)/2;
+  const pos={};ids.forEach(id=>pos[id]={x:x0+(2*rank[id]+1.5)*half,y:y0+depth[id]*lv});
+  return{pos,half,lv,r,H,y0};
+}
+function markerPos(m,L,tree){
+  const r=L.r;
+  if(m.at&&L.pos[m.at]){const p=L.pos[m.at];return m.kind==='s'?{x:p.x+r*1.45,y:p.y-r*1.35}:{x:p.x-r*1.45,y:p.y-r*1.35};}
+  if(m.gap){
+    if(m.gap.root)return{x:W/2,y:L.y0};
+    const p=L.pos[m.gap.p];return{x:p.x+(m.gap.s==='l'?-L.half:L.half),y:p.y+L.lv};
+  }
+  if(tree.root&&L.pos[tree.root]){const p=L.pos[tree.root];return{x:Math.max(r,p.x-r*3.1),y:Math.max(r,p.y-r*1.9)};}
+  return{x:W/2-r*2.4,y:Math.max(r,L.y0-r*1.7)};
+}
+function interp(a,e){
+  const F=a.from,T=a.to;
+  const s={nodes:{},marks:{},half:lerp(F.half,T.half,e),lv:lerp(F.lv,T.lv,e),r:lerp(F.r,T.r,e),H:lerp(F.H,T.H,e),y0:lerp(F.y0,T.y0,e)};
+  for(const id in T.nodes){const f=F.nodes[id]||T.nodes[id],t=T.nodes[id];s.nodes[id]={x:lerp(f.x,t.x,e),y:lerp(f.y,t.y,e),op:lerp(f.op,t.op,e),sc:lerp(f.sc,t.sc,e),gone:!!t.gone};}
+  for(const k in T.marks){const f=F.marks[k]||T.marks[k],t=T.marks[k];s.marks[k]={x:lerp(f.x,t.x,e),y:lerp(f.y,t.y,e),op:lerp(f.op,t.op,e)};}
+  return s;
+}
+function progress(now){return anim&&anim.dur?clamp((now-anim.t0)/anim.dur,0,1):1;}
+function snapshot(now){
+  if(!anim)return null;
+  const t=progress(now),s=interp(anim,ease(t));
+  for(const id in s.nodes)if(s.nodes[id].op<0.01)delete s.nodes[id];
+  for(const k in s.marks)if(s.marks[k].op<0.01)delete s.marks[k];
+  return s;
+}
+function startTween(f,instant){
+  const L=layout(f.tree),now=performance.now(),prevS=snapshot(now);
+  const to={nodes:{},marks:{},half:L.half,lv:L.lv,r:L.r,H:L.H,y0:L.y0};
+  for(const id in L.pos)to.nodes[id]={x:L.pos[id].x,y:L.pos[id].y,op:1,sc:1};
+  for(const m of f.markers){const p=markerPos(m,L,f.tree);to.marks[m.kind||'k']={x:p.x,y:p.y,op:1};}
+  const from={nodes:{},marks:{},half:prevS?prevS.half:L.half,lv:prevS?prevS.lv:L.lv,r:prevS?prevS.r:L.r,H:prevS?prevS.H:L.H,y0:prevS?prevS.y0:L.y0};
+  for(const id in to.nodes){const P=prevS&&prevS.nodes[id];from.nodes[id]=P?{...P,gone:false}:{x:to.nodes[id].x,y:to.nodes[id].y-8,op:0,sc:.35};}
+  if(prevS)for(const id in prevS.nodes){if(!to.nodes[id]){from.nodes[id]={...prevS.nodes[id]};to.nodes[id]={x:prevS.nodes[id].x,y:prevS.nodes[id].y+6,op:0,sc:.4,gone:true};}}
+  for(const k in to.marks){const P=prevS&&prevS.marks[k];from.marks[k]=P?{...P}:{...to.marks[k],op:0};}
+  if(prevS)for(const k in prevS.marks){if(!to.marks[k]){from.marks[k]={...prevS.marks[k]};to.marks[k]={...prevS.marks[k],op:0};}}
+  const quick=instant||REDUCE;
+  anim={t0:now,dur:quick?0:DUR/speed,from,to,f,pf:quick?f:(lastF||f),L};
+  lastF=f;
+}
+
+const STY={
+  normal:{fill:'#FFFFFF',stroke:'#D6C5AC',sw:2.2,text:'#3866A8'},
+  faded:{fill:'#F8F6F2',stroke:'#ECE6DD',sw:2,text:'#BFCCDD'},
+  focus:{fill:'#FFFFFF',stroke:'#EE9418',sw:3.6,text:'#3866A8'},
+  found:{fill:'#E6F5EB',stroke:'#2F9455',sw:3.2,text:'#257A45',pulse:1},
+  new:{fill:'#E6F5EB',stroke:'#2F9455',sw:3.2,text:'#257A45',pulse:1},
+  dup:{fill:'#FFF2DA',stroke:'#EE9418',sw:3.2,text:'#B85E0B',pulse:1},
+  target:{fill:'#FCE8E6',stroke:'#D2483E',sw:3.2,text:'#C2392F',pulse:1},
+  succFocus:{fill:'#FFFFFF',stroke:'#7356D1',sw:3.6,text:'#3866A8'},
+  succ:{fill:'#EFEAFC',stroke:'#7356D1',sw:3.2,text:'#5B3FB8',pulse:1},
+  replaced:{fill:'#EFEAFC',stroke:'#7356D1',sw:3.2,text:'#5B3FB8'},
+  moving:{fill:'#FFF0D6',stroke:'#EE9418',sw:3.2,text:'#B85E0B',pulse:1},
+  done:{fill:'#F1F9F3',stroke:'#A5D6B5',sw:2.2,text:'#2F9455'}
+};
+
+function chip(key,parent){
+  const g=el(key,'g',parent);
+  if(!g._c){g._c=1;g._lab=mk('text');g._circ=mk('circle');g._t=mk('text');g.append(g._lab,g._circ,g._t);}
+  return g;
+}
+function draw(s,a,e,time){
+  used.clear();
+  const f=a.f,pf=a.pf,r=s.r,half=s.half,lv=s.lv;
+  svg.setAttribute('viewBox',`0 0 ${W} ${s.H}`);svg.setAttribute('height',s.H);
+  const vis=new Set(f.visited),pathSet=new Set(f.path),spathSet=new Set(f.spath);
+  const nodeStyle=id=>{
+    if(!f.tree.nodes[id])return (pf.states&&pf.states[id])||'target';
+    const st=f.states[id];if(st)return st;
+    return f.dim&&!vis.has(id)?'faded':'normal';
+  };
+
+  /* aristas */
+  const edges=new Map();
+  const addE=(tree,flag)=>{for(const id in tree.nodes){const nd=tree.nodes[id];for(const sd of['l','r']){const c=nd[sd];if(c){const key=id+'>'+c;const o=edges.get(key)||{p:id,c};o[flag]=true;edges.set(key,o);}}}};
+  addE(f.tree,'n');if(pf!==f)addE(pf.tree,'o');else edges.forEach(v=>v.o=true);
+  for(const [key,E] of edges){
+    const P=s.nodes[E.p],Cn=s.nodes[E.c];if(!P||!Cn)continue;
+    let op=E.n&&E.o?1:(E.n?e:1-e);op*=Math.min(P.op,Cn.op);if(op<0.02)continue;
+    const dx=Cn.x-P.x,dy=Cn.y-P.y,d=Math.hypot(dx,dy)||1,ux=dx/d,uy=dy/d;
+    const x1=P.x+ux*r*P.sc,y1=P.y+uy*r*P.sc,x2=Cn.x-ux*(r*Cn.sc+1.5),y2=Cn.y-uy*(r*Cn.sc+1.5);
+    const kind=pathSet.has(key)&&E.n?'o':spathSet.has(key)&&E.n?'v':(f.dim&&!(vis.has(E.p)&&vis.has(E.c)))?'f':'n';
+    if(kind==='o'||kind==='v')attrs(el('eu:'+key,'line',gEU),{x1,y1,x2,y2,stroke:kind==='o'?'#FCDDAE':'#E4DCFB','stroke-width':11,'stroke-linecap':'round',opacity:op});
+    attrs(el('e:'+key,'line',gE),{x1,y1,x2,y2,stroke:{o:'#EE9418',v:'#7356D1',f:'#DDD8D0',n:'#4D4C57'}[kind],
+      'stroke-width':kind==='o'||kind==='v'?3.8:2,'stroke-linecap':'round','marker-end':`url(#ah${kind})`,opacity:op});
+  }
+
+  /* huecos vacíos (null) */
+  const gaps=new Map();
+  const addG=(tree,flag)=>{
+    if(!tree.root){const o=gaps.get('root')||{p:null};o[flag]=true;gaps.set('root',o);return;}
+    for(const id in tree.nodes){const nd=tree.nodes[id];for(const sd of['l','r'])if(!nd[sd]){const key=id+':'+sd;const o=gaps.get(key)||{p:id,s:sd};o[flag]=true;gaps.set(key,o);}}
+  };
+  addG(f.tree,'n');if(pf!==f)addG(pf.tree,'o');else gaps.forEach(v=>v.o=true);
+  for(const [key,G] of gaps){
+    let op=G.n&&G.o?1:(G.n?e:1-e);
+    let gx,gy,P=null;
+    if(key==='root'){gx=W/2;gy=s.y0;}
+    else{P=s.nodes[G.p];if(!P)continue;op*=P.op;gx=P.x+(G.s==='l'?-half:half);gy=P.y+lv;}
+    if(op<0.02)continue;
+    const st=G.n?(f.gaps[key]||null):null;
+    const faded=f.dim&&P&&!vis.has(G.p)&&!st;
+    const pulse=st?1+0.09*Math.sin(time/190):1;
+    const rp=r*0.55*(st?1.15:1);
+    const col=st==='target'?'#E8890C':st==='miss'?'#D2483E':'#D8CCBA';
+    const fop=op*(faded?.45:1);
+    if(P){
+      const dx=gx-P.x,dy=gy-P.y,d=Math.hypot(dx,dy)||1,ux=dx/d,uy=dy/d;
+      attrs(el('gl:'+key,'line',gP),{x1:P.x+ux*r*P.sc,y1:P.y+uy*r*P.sc,x2:gx-ux*rp,y2:gy-uy*rp,stroke:col,'stroke-width':st?2.6:1.6,'stroke-dasharray':'4 5',opacity:fop});
+    }
+    attrs(el('gc:'+key,'circle',gP),{cx:gx,cy:gy,r:rp*pulse,fill:st==='target'?'#FFF0D6':st==='miss'?'#FCE8E6':'#FBF8F3',stroke:col,'stroke-width':st?2.6:1.6,'stroke-dasharray':'4 4',opacity:fop});
+    if(st==='miss'){const tx=el('gt:'+key,'text',gP);attrs(tx,{x:gx,y:gy+rp+16,'text-anchor':'middle',fill:'#D2483E','font-size':13,opacity:op});tx.textContent='null';}
+    if(key==='root'&&G.n){const tx=el('rootnone','text',gP);attrs(tx,{x:gx,y:gy+rp+(st==='miss'?34:18),'text-anchor':'middle',fill:'#B85E0B','font-size':13.5,opacity:op});tx.textContent='raiz = null';}
+  }
+
+  /* nodos */
+  const ids=Object.keys(s.nodes).sort((x,y)=>(s.nodes[x].gone?0:1)-(s.nodes[y].gone?0:1));
+  for(const id of ids){
+    const N=s.nodes[id];if(N.op<0.01)continue;
+    const g=el('n:'+id,'g',gN);
+    if(!g._c){g._c=1;g._ring=mk('circle');g._body=mk('circle');g._txt=mk('text');g.append(g._ring,g._body,g._txt);}
+    const S=STY[nodeStyle(id)]||STY.normal;
+    let key=f.tree.nodes[id]?f.tree.nodes[id].key:(pf.tree.nodes[id]?pf.tree.nodes[id].key:'');
+    if(f.fly&&f.fly.to===id&&e<0.9&&a.dur>0)key=f.fly.old;
+    g.setAttribute('transform',`translate(${N.x.toFixed(2)},${N.y.toFixed(2)}) scale(${N.sc.toFixed(3)})`);g.setAttribute('opacity',N.op.toFixed(3));
+    attrs(g._body,{r,fill:S.fill,stroke:S.stroke,'stroke-width':S.sw});
+    if(S.pulse)attrs(g._ring,{r:r+6+3*Math.sin(time/230),fill:'none',stroke:S.stroke,'stroke-width':3,opacity:.25});else g._ring.setAttribute('opacity',0);
+    const str=String(key);if(g._txt.textContent!==str)g._txt.textContent=str;
+    attrs(g._txt,{'text-anchor':'middle','dominant-baseline':'central',fill:S.text,'font-size':(r*(str.length>=3?0.64:0.8)).toFixed(1),y:1});
+  }
+
+  /* etiqueta raíz */
+  const rid=f.tree.root;
+  if(rid&&s.nodes[rid]){
+    const R=s.nodes[rid];
+    attrs(el('rl','text',gM),{x:R.x-r-32,y:R.y,'text-anchor':'end','dominant-baseline':'central',fill:'#B85E0B','font-size':14,opacity:R.op});
+    pool.get('rl').textContent='raíz';
+    attrs(el('ra','line',gM),{x1:R.x-r-28,y1:R.y,x2:R.x-r-5,y2:R.y,stroke:'#B85E0B','stroke-width':2.4,'stroke-linecap':'round','marker-end':'url(#ahr)',opacity:R.op});
+  }
+
+  /* fichas (marcadores) */
+  for(const kind in s.marks){
+    const M=s.marks[kind];if(M.op<0.01)continue;
+    const def=f.markers.find(m=>(m.kind||'k')===kind)||(pf.markers||[]).find(m=>(m.kind||'k')===kind);
+    if(!def)continue;
+    const col=kind==='s'?'#7356D1':'#F39A12',rc=r*0.8;
+    if(def.at&&s.nodes[def.at]){
+      const N=s.nodes[def.at],dx=N.x-M.x,dy=N.y-M.y,d=Math.hypot(dx,dy)||1;
+      attrs(el('mc:'+kind,'line',gM),{x1:M.x+dx/d*rc,y1:M.y+dy/d*rc,x2:N.x-dx/d*(r+3),y2:N.y-dy/d*(r+3),stroke:col,'stroke-width':3.4,'stroke-linecap':'round',opacity:d>r+rc+4?M.op:0});
+    }
+    const g=chip('m:'+kind,gM);
+    g.setAttribute('transform',`translate(${M.x.toFixed(2)},${M.y.toFixed(2)})`);g.setAttribute('opacity',M.op.toFixed(3));
+    attrs(g._circ,{r:rc,fill:col,stroke:'#fff','stroke-width':3,filter:'url(#sh)'});
+    const str=String(def.v);if(g._t.textContent!==str)g._t.textContent=str;
+    attrs(g._t,{'text-anchor':'middle','dominant-baseline':'central',fill:'#fff','font-size':(rc*(str.length>=3?0.62:0.9)).toFixed(1),y:1});
+    g._lab.textContent=def.label||'';
+    attrs(g._lab,{y:-rc-8,'text-anchor':'middle',fill:col,'font-size':12.5});
+  }
+
+  /* copia del sucesor volando */
+  if(f.fly&&a.dur>0&&e<1){
+    const A=s.nodes[f.fly.from],B=s.nodes[f.fly.to];
+    if(A&&B){
+      const x=lerp(A.x,B.x,e),y=lerp(A.y,B.y,e)-Math.sin(Math.PI*e)*lv*0.7,rc=r*0.85;
+      const g=chip('fly',gM);
+      g.setAttribute('transform',`translate(${x.toFixed(2)},${y.toFixed(2)})`);g.setAttribute('opacity',e>0.88?((1-e)/0.12).toFixed(3):1);
+      attrs(g._circ,{r:rc,fill:'#7356D1',stroke:'#fff','stroke-width':3,filter:'url(#sh)'});
+      g._t.textContent=String(f.fly.v);
+      attrs(g._t,{'text-anchor':'middle','dominant-baseline':'central',fill:'#fff','font-size':(rc*0.85).toFixed(1),y:1});
+      g._lab.textContent='copia';attrs(g._lab,{y:-rc-8,'text-anchor':'middle',fill:'#7356D1','font-size':12.5});
+    }
+  }
+
+  for(const [k,node] of pool)if(!used.has(k)){node.remove();pool.delete(k);}
+}
+function tick(time){
+  if(anim){const t=progress(time);draw(interp(anim,ease(t)),anim,ease(t),time);}
+  requestAnimationFrame(tick);
+}
+
+/* ================= Controles ================= */
+function toast(msg){const t=$('#toast');t.textContent=msg;t.classList.add('on');clearTimeout(t._t);t._t=setTimeout(()=>t.classList.remove('on'),2800);}
+function readNum(){
+  const v=$('#num').value.trim();
+  if(!/^\d{1,3}$/.test(v)){toast('Escribe un número entero entre 0 y 999');$('#num').focus();return null;}
+  return +v;
+}
+function readList(){
+  const parts=$('#list').value.split(/[\s,;]+/).filter(Boolean);
+  if(!parts.length){toast('Escribe al menos un número en la lista');return null;}
+  for(const p of parts)if(!/^\d{1,3}$/.test(p)){toast(`"${p}" no es válido: usa enteros entre 0 y 999`);return null;}
+  return parts.map(Number);
+}
+function fits(tree,keys){
+  const set=new Set(keysInorder(tree));for(const k of keys)set.add(k);
+  if(set.size>MAX_NODES){toast(`Máximo ${MAX_NODES} nodos para que el árbol se vea bien`);return false;}
+  return true;
+}
+function doInsert(){const k=readNum();if(k===null)return;if(!fits(finalState().tree,[k]))return;run(ctx=>opInsert(ctx,k));}
+function doSearch(){const k=readNum();if(k===null)return;run(ctx=>opSearch(ctx,k));}
+function doDelete(){const k=readNum();if(k===null)return;run(ctx=>opDelete(ctx,k,MODE));}
+function doList(){
+  const keys=readList();if(!keys)return;const fresh=$('#fresh').checked;
+  if(!fits(fresh?emptyTree():finalState().tree,keys))return;
+  run(ctx=>{if(fresh&&ctx.tree.root){ctx.tree=emptyTree();ctx.log.push({t:'info',s:'— árbol vacío —'});}keys.forEach(k=>opInsert(ctx,k));});
+}
+function doBuild(keys,label){
+  if(!fits(emptyTree(),keys))return;
+  run(ctx=>{
+    ctx.tree=buildInstant(keys);
+    ctx.log.push({t:'cmd',s:`construir(${keys.join(', ')})`});
+    ctx.log.push({t:'ok',s:`→ ${count(ctx.tree)} nodos · altura ${height(ctx.tree)}`});
+    ctx.push({file:'insertar',title:label||'Árbol construido',subtitle:'Se insertaron todos los números en el orden de la lista. Ahora busca, inserta o elimina'});
+  },{autoplay:false});
+}
+$('#bIns').onclick=doInsert;$('#bSea').onclick=doSearch;$('#bDel').onclick=doDelete;
+$('#bList').onclick=doList;
+$('#bBuild').onclick=()=>{const k=readList();if(k)doBuild(k);};
+$('#num').addEventListener('keydown',e=>{if(e.key==='Enter')doInsert();});
+$('#list').addEventListener('keydown',e=>{if(e.key==='Enter')doList();});
+$('#bMin').onclick=()=>run(ctx=>opExtreme(ctx,true));
+$('#bMax').onclick=()=>run(ctx=>opExtreme(ctx,false));
+$('#bIno').onclick=()=>run(ctx=>opInorder(ctx));
+$('#bUndo').onclick=()=>{
+  if(!history.length){toast('No hay nada que deshacer');return;}
+  const tree=history.pop(),log=finalState().log.concat([{t:'info',s:'↶ deshacer'}]);
+  frames=[mkFrame({tree,log,title:'Deshecho',subtitle:'Volvimos al árbol que había antes de la última operación'})];pause();show(0);
+};
+$('#bClear').onclick=()=>run(ctx=>{ctx.tree=emptyTree();ctx.log.push({t:'info',s:'— árbol vacío —'});ctx.push({title:'Árbol vacío',subtitle:'Inserta un número o una lista para empezar'});},{autoplay:false});
+$('#bRand').onclick=()=>{
+  const n=7+Math.floor(Math.random()*5),set=new Set();
+  while(set.size<n)set.add(1+Math.floor(Math.random()*99));
+  const keys=[...set];$('#list').value=keys.join(', ');doBuild(keys,'Árbol aleatorio');
+};
+$('#modeSeg').onclick=e=>{const b=e.target.closest('button');if(!b)return;MODE=b.dataset.m;
+  [...$('#modeSeg').children].forEach(x=>x.classList.toggle('on',x===b));
+  toast(MODE==='suc'?'Dos hijos: se reemplaza por el sucesor (menor del lado derecho)':'Dos hijos: se reemplaza por el predecesor (mayor del lado izquierdo)');};
+function syncSpeed(){const r=$('#speed');speed=+r.value;$('#speedVal').textContent=String(+speed.toFixed(2))+'×';
+  r.style.setProperty('--p',((speed-r.min)/(r.max-r.min)*100)+'%');}
+$('#stepRange').addEventListener('input',e=>{const v=+e.target.value;if(v!==idx){pause();show(v);}});
+$('#speed').addEventListener('input',()=>{syncSpeed();if(playing)schedule();});syncSpeed();
+$('#bPlay').onclick=togglePlay;$('#bNext').onclick=next;$('#bPrev').onclick=prev;
+$('#bFirst').onclick=()=>{pause();show(0);};$('#bLast').onclick=()=>{pause();show(frames.length-1);};
+document.addEventListener('keydown',e=>{
+  if(e.target.matches('input[type=text]'))return;
+  if(e.key==='ArrowRight'){e.preventDefault();next();}
+  else if(e.key==='ArrowLeft'){e.preventDefault();prev();}
+  else if(e.key===' '){e.preventDefault();togglePlay();}
+});
+
+
+/* tamaño del escenario */
+new ResizeObserver(()=>{const w=Math.max(280,$('#stage').clientWidth);if(Math.abs(w-W)>1){W=w;if(frames.length)startTween(frames[idx],true);}}).observe($('#stage'));
+
+/* inicio */
+frames=[mkFrame({tree:buildInstant(SLIDE),log:[{t:'info',s:'Simulador listo · árbol: 50 30 70 20 40 60 80'}],
+  title:'Listo para empezar',subtitle:'Este es el árbol de la diapositiva. Inserta, busca o elimina números abajo y avanza paso a paso'})];
+show(0,true);
+requestAnimationFrame(tick);
+</script>
+</body>
+</html>
