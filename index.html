@@ -92,8 +92,8 @@ button{font-family:inherit}
 .stats .hint{color:#A0968A}
 .st-tag{display:inline-block;margin-left:4px;font-family:var(--font);font-weight:900;font-size:12px;padding:1px 9px;border-radius:999px}
 .st-tag.good{background:#E3F4E8;color:#2E8B4E}.st-tag.bad{background:#FCE6E4;color:#C9473D}
-.stage{position:relative;min-height:280px}
-#svg{display:block;width:100%;overflow:visible}
+.stage{position:relative;min-height:280px;overflow-x:auto;overflow-y:hidden;scrollbar-width:thin}
+#svg{display:block;overflow:visible}
 #svg text{font-family:var(--mono);font-weight:800}
 .legend{display:flex;flex-wrap:wrap;gap:4px 12px;font-size:12px;font-weight:800;color:#8C8174;padding:0 4px}
 .legend span{display:inline-flex;align-items:center;gap:6px}
@@ -131,6 +131,12 @@ kbd{font-family:var(--mono);font-size:11.5px;background:#fff;border:1.5px solid 
 .controls{background:#fff;border:1.5px solid var(--line);border-radius:18px;padding:10px 12px;display:flex;flex-direction:column;gap:8px}
 .crow{display:flex;gap:7px;flex-wrap:wrap;align-items:center}
 .crow #list{flex:1;min-width:180px}
+textarea#list{font-family:var(--mono);font-size:14px;font-weight:700;color:var(--ink);border:1.5px solid #E3D8C6;border-radius:13px;padding:8px 12px;background:#FFFDF9;outline:none;resize:vertical;line-height:1.5;min-height:40px;max-height:240px;transition:border-color .2s,box-shadow .2s}
+textarea#list:focus{border-color:var(--orange);box-shadow:0 0 0 4px #FFE9C7}
+#randN{width:64px;text-align:center}
+.hintx{font-size:12.5px;font-weight:800;color:#A0968A;flex-basis:100%}
+.btn.green{color:#25804A;border-color:#BFE2CB}.btn.green:hover{border-color:#2F9455}
+.btn.purple{color:#5B3FB8;border-color:#D6CCF5;background:#F7F4FE}.btn.purple:hover{border-color:#7356D1}
 .sep{width:1.5px;height:24px;background:var(--line);margin:0 3px}
 .mini{font-weight:900;font-size:13px;color:#8C8174}
 .crow .seg button{padding:5px 10px;font-size:13.5px}
@@ -255,14 +261,21 @@ input[type=text]:focus{border-color:var(--orange);box-shadow:0 0 0 4px #FFE9C7}
             <button class="btn blue" id="bSea">Buscar</button>
             <button class="btn danger" id="bDel">Eliminar</button>
             <span class="sep"></span>
-            <button class="btn sm" id="bMin">Mínimo</button>
-            <button class="btn sm" id="bMax">Máximo</button>
+            <button class="btn sm green" id="bMin">↙ Mínimo</button>
+            <button class="btn sm green" id="bMax">Máximo ↘</button>
             <button class="btn sm" id="bIno">Inorden</button>
           </div>
           <div class="crow">
-            <input type="text" id="list" value="50, 30, 70, 20, 40, 60, 80" aria-label="Lista de números">
+            <textarea id="list" rows="1" spellcheck="false" aria-label="Lista de números (editable)">50, 30, 70, 20, 40, 60, 80</textarea>
             <button class="btn primary" id="bList">Insertar lista</button>
             <button class="btn" id="bBuild">Construir de una vez</button>
+          </div>
+          <div class="crow">
+            <span class="mini">Árbol aleatorio de</span>
+            <input type="text" id="randN" inputmode="numeric" value="100" maxlength="3" aria-label="Cantidad de datos aleatorios">
+            <span class="mini">datos</span>
+            <button class="btn purple" id="bRand">🎲 Generar aleatorio</button>
+            <span class="hintx">Los números quedan en la lista de arriba: puedes editarlos y darle «Construir de una vez».</span>
           </div>
           <div class="crow small">
             <label class="chk"><input type="checkbox" id="fresh" checked> Lista desde árbol vacío</label>
@@ -271,7 +284,6 @@ input[type=text]:focus{border-color:var(--orange);box-shadow:0 0 0 4px #FFE9C7}
             <div class="seg" id="modeSeg"><button data-m="suc" class="on">Sucesor</button><button data-m="pred">Predecesor</button></div>
             <span class="sep"></span>
             <button class="btn sm" id="bUndo">↶ Deshacer</button>
-            <button class="btn sm" id="bRand">Aleatorio</button>
             <button class="btn sm danger" id="bClear">Vaciar</button>
           </div>
         </div>
@@ -290,7 +302,7 @@ const lerp=(a,b,t)=>a+(b-a)*t;
 const ease=t=>t<.5?4*t*t*t:1-Math.pow(-2*t+2,3)/2;
 const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 const REDUCE=window.matchMedia&&matchMedia('(prefers-reduced-motion: reduce)').matches;
-const MAX_NODES=24, DUR=640, DWELL=1750;
+const MAX_NODES=100, DUR=640, DWELL=1750;
 const SLIDE=[50,30,70,20,40,60,80];
 
 /* ================= Modelo del árbol ================= */
@@ -708,6 +720,15 @@ function show(i,instant){
   idx=i;const f=frames[i];
   renderCode(f);renderTexts(f);updatePlayer();renderExpl();
   startTween(f,instant);
+  if(!instant)follow();
+}
+function follow(){
+  const st=$('#stage'),a=anim;if(!a||a.to.W<=st.clientWidth+2)return;
+  let x=null;const m=a.to.marks.s||a.to.marks.k;
+  if(m&&m.op>0)x=m.x;
+  else{const id=Object.keys(a.f.states).find(id=>a.to.nodes[id]&&!a.to.nodes[id].gone)||a.f.tree.root;if(id&&a.to.nodes[id])x=a.to.nodes[id].x;}
+  if(x==null)return;
+  const w=st.clientWidth;if(x<st.scrollLeft+70||x>st.scrollLeft+w-70)st.scrollTo({left:x-w/2,behavior:'smooth'});
 }
 
 /* ================= Motor de animación del árbol ================= */
@@ -723,30 +744,31 @@ function layout(tree){
   const ids=inorderIds(tree),n=ids.length,rank={},depth={};ids.forEach((id,i)=>rank[id]=i);
   let maxD=-1;(function go(id,d){if(!id)return;depth[id]=d;if(d>maxD)maxD=d;go(tree.nodes[id].l,d+1);go(tree.nodes[id].r,d+1);})(tree.root,0);
   const baseH=W<560?300:330,padX=16,slots=Math.max(2*n+1,3);
-  const half=Math.min(48,(W-2*padX)/slots);
-  const r0=clamp(half*1.25,12,25);
+  const half=Math.max(11,Math.min(48,(W-2*padX)/slots));
+  const LW=Math.max(W,slots*half+2*padX);
+  const r0=clamp(half*1.25,16,25);
   const y0=Math.max(50,r0*2.3+14),pb=22;
   const rows=Math.max(maxD+2,2);
   const lv=clamp((baseH-y0-pb)/(rows-1),52,96);
-  const r=clamp(Math.min(r0,lv*0.34),12,25);
+  const r=clamp(Math.min(r0,lv*0.34),16,25);
   const H=Math.max(baseH,y0+(rows-1)*lv+pb);
-  const x0=(W-(2*n+1)*half)/2;
+  const x0=(LW-(2*n+1)*half)/2;
   const pos={};ids.forEach(id=>pos[id]={x:x0+(2*rank[id]+1.5)*half,y:y0+depth[id]*lv});
-  return{pos,half,lv,r,H,y0};
+  return{pos,half,lv,r,H,y0,W:LW};
 }
 function markerPos(m,L,tree){
   const r=L.r;
   if(m.at&&L.pos[m.at]){const p=L.pos[m.at];return m.kind==='s'?{x:p.x+r*1.45,y:p.y-r*1.35}:{x:p.x-r*1.45,y:p.y-r*1.35};}
   if(m.gap){
-    if(m.gap.root)return{x:W/2,y:L.y0};
+    if(m.gap.root)return{x:L.W/2,y:L.y0};
     const p=L.pos[m.gap.p];return{x:p.x+(m.gap.s==='l'?-L.half:L.half),y:p.y+L.lv};
   }
   if(tree.root&&L.pos[tree.root]){const p=L.pos[tree.root];return{x:Math.max(r,p.x-r*3.1),y:Math.max(r,p.y-r*1.9)};}
-  return{x:W/2-r*2.4,y:Math.max(r,L.y0-r*1.7)};
+  return{x:L.W/2-r*2.4,y:Math.max(r,L.y0-r*1.7)};
 }
 function interp(a,e){
   const F=a.from,T=a.to;
-  const s={nodes:{},marks:{},half:lerp(F.half,T.half,e),lv:lerp(F.lv,T.lv,e),r:lerp(F.r,T.r,e),H:lerp(F.H,T.H,e),y0:lerp(F.y0,T.y0,e)};
+  const s={nodes:{},marks:{},W:lerp(F.W,T.W,e),half:lerp(F.half,T.half,e),lv:lerp(F.lv,T.lv,e),r:lerp(F.r,T.r,e),H:lerp(F.H,T.H,e),y0:lerp(F.y0,T.y0,e)};
   for(const id in T.nodes){const f=F.nodes[id]||T.nodes[id],t=T.nodes[id];s.nodes[id]={x:lerp(f.x,t.x,e),y:lerp(f.y,t.y,e),op:lerp(f.op,t.op,e),sc:lerp(f.sc,t.sc,e),gone:!!t.gone};}
   for(const k in T.marks){const f=F.marks[k]||T.marks[k],t=T.marks[k];s.marks[k]={x:lerp(f.x,t.x,e),y:lerp(f.y,t.y,e),op:lerp(f.op,t.op,e)};}
   return s;
@@ -761,16 +783,17 @@ function snapshot(now){
 }
 function startTween(f,instant){
   const L=layout(f.tree),now=performance.now(),prevS=snapshot(now);
-  const to={nodes:{},marks:{},half:L.half,lv:L.lv,r:L.r,H:L.H,y0:L.y0};
+  const to={nodes:{},marks:{},W:L.W,half:L.half,lv:L.lv,r:L.r,H:L.H,y0:L.y0};
   for(const id in L.pos)to.nodes[id]={x:L.pos[id].x,y:L.pos[id].y,op:1,sc:1};
   for(const m of f.markers){const p=markerPos(m,L,f.tree);to.marks[m.kind||'k']={x:p.x,y:p.y,op:1};}
-  const from={nodes:{},marks:{},half:prevS?prevS.half:L.half,lv:prevS?prevS.lv:L.lv,r:prevS?prevS.r:L.r,H:prevS?prevS.H:L.H,y0:prevS?prevS.y0:L.y0};
+  const from={nodes:{},marks:{},W:prevS?prevS.W:L.W,half:prevS?prevS.half:L.half,lv:prevS?prevS.lv:L.lv,r:prevS?prevS.r:L.r,H:prevS?prevS.H:L.H,y0:prevS?prevS.y0:L.y0};
   for(const id in to.nodes){const P=prevS&&prevS.nodes[id];from.nodes[id]=P?{...P,gone:false}:{x:to.nodes[id].x,y:to.nodes[id].y-8,op:0,sc:.35};}
   if(prevS)for(const id in prevS.nodes){if(!to.nodes[id]){from.nodes[id]={...prevS.nodes[id]};to.nodes[id]={x:prevS.nodes[id].x,y:prevS.nodes[id].y+6,op:0,sc:.4,gone:true};}}
   for(const k in to.marks){const P=prevS&&prevS.marks[k];from.marks[k]=P?{...P}:{...to.marks[k],op:0};}
   if(prevS)for(const k in prevS.marks){if(!to.marks[k]){from.marks[k]={...prevS.marks[k]};to.marks[k]={...prevS.marks[k],op:0};}}
   const quick=instant||REDUCE;
   anim={t0:now,dur:quick?0:DUR/speed,from,to,f,pf:quick?f:(lastF||f),L};
+  svg.style.width=Math.max(to.W,from.W)+'px';svg.setAttribute('width',Math.max(to.W,from.W));
   lastF=f;
 }
 
@@ -797,7 +820,7 @@ function chip(key,parent){
 function draw(s,a,e,time){
   used.clear();
   const f=a.f,pf=a.pf,r=s.r,half=s.half,lv=s.lv;
-  svg.setAttribute('viewBox',`0 0 ${W} ${s.H}`);svg.setAttribute('height',s.H);
+  const VW=Math.max(s.W,a.to.W);svg.setAttribute('viewBox',`0 0 ${VW} ${s.H}`);svg.setAttribute('height',s.H);svg.setAttribute('width',VW);svg.style.width=VW+'px';
   const vis=new Set(f.visited),pathSet=new Set(f.path),spathSet=new Set(f.spath);
   const nodeStyle=id=>{
     if(!f.tree.nodes[id])return (pf.states&&pf.states[id])||'target';
@@ -830,7 +853,7 @@ function draw(s,a,e,time){
   for(const [key,G] of gaps){
     let op=G.n&&G.o?1:(G.n?e:1-e);
     let gx,gy,P=null;
-    if(key==='root'){gx=W/2;gy=s.y0;}
+    if(key==='root'){gx=s.W/2;gy=s.y0;}
     else{P=s.nodes[G.p];if(!P)continue;op*=P.op;gx=P.x+(G.s==='l'?-half:half);gy=P.y+lv;}
     if(op<0.02)continue;
     const st=G.n?(f.gaps[key]||null):null;
@@ -861,7 +884,7 @@ function draw(s,a,e,time){
     attrs(g._body,{r,fill:S.fill,stroke:S.stroke,'stroke-width':S.sw});
     if(S.pulse)attrs(g._ring,{r:r+6+3*Math.sin(time/230),fill:'none',stroke:S.stroke,'stroke-width':3,opacity:.25});else g._ring.setAttribute('opacity',0);
     const str=String(key);if(g._txt.textContent!==str)g._txt.textContent=str;
-    attrs(g._txt,{'text-anchor':'middle','dominant-baseline':'central',fill:S.text,'font-size':(r*(str.length>=3?0.64:0.8)).toFixed(1),y:1});
+    attrs(g._txt,{'text-anchor':'middle','dominant-baseline':'central',fill:S.text,'font-size':(r*(str.length>=3?0.68:0.8)).toFixed(1),y:1});
   }
 
   /* etiqueta raíz */
@@ -928,7 +951,7 @@ function readList(){
 }
 function fits(tree,keys){
   const set=new Set(keysInorder(tree));for(const k of keys)set.add(k);
-  if(set.size>MAX_NODES){toast(`Máximo ${MAX_NODES} nodos para que el árbol se vea bien`);return false;}
+  if(set.size>MAX_NODES){toast(`Máximo ${MAX_NODES} nodos`);return false;}
   return true;
 }
 function doInsert(){const k=readNum();if(k===null)return;if(!fits(finalState().tree,[k]))return;run(ctx=>opInsert(ctx,k));}
@@ -943,7 +966,7 @@ function doBuild(keys,label){
   if(!fits(emptyTree(),keys))return;
   run(ctx=>{
     ctx.tree=buildInstant(keys);
-    ctx.log.push({t:'cmd',s:`construir(${keys.join(', ')})`});
+    ctx.log.push({t:'cmd',s:keys.length>12?`construir(${keys.length} números)`:`construir(${keys.join(', ')})`});
     ctx.log.push({t:'ok',s:`→ ${count(ctx.tree)} nodos · altura ${height(ctx.tree)}`});
     ctx.push({file:'insertar',title:label||'Árbol construido',subtitle:'Se insertaron todos los números en el orden de la lista. Ahora busca, inserta o elimina'});
   },{autoplay:false});
@@ -952,7 +975,7 @@ $('#bIns').onclick=doInsert;$('#bSea').onclick=doSearch;$('#bDel').onclick=doDel
 $('#bList').onclick=doList;
 $('#bBuild').onclick=()=>{const k=readList();if(k)doBuild(k);};
 $('#num').addEventListener('keydown',e=>{if(e.key==='Enter')doInsert();});
-$('#list').addEventListener('keydown',e=>{if(e.key==='Enter')doList();});
+$('#list').addEventListener('keydown',e=>{if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();doList();}});
 $('#bMin').onclick=()=>run(ctx=>opExtreme(ctx,true));
 $('#bMax').onclick=()=>run(ctx=>opExtreme(ctx,false));
 $('#bIno').onclick=()=>run(ctx=>opInorder(ctx));
@@ -963,10 +986,16 @@ $('#bUndo').onclick=()=>{
 };
 $('#bClear').onclick=()=>run(ctx=>{ctx.tree=emptyTree();ctx.log.push({t:'info',s:'— árbol vacío —'});ctx.push({title:'Árbol vacío',subtitle:'Inserta un número o una lista para empezar'});},{autoplay:false});
 $('#bRand').onclick=()=>{
-  const n=7+Math.floor(Math.random()*5),set=new Set();
-  while(set.size<n)set.add(1+Math.floor(Math.random()*99));
-  const keys=[...set];$('#list').value=keys.join(', ');doBuild(keys,'Árbol aleatorio');
+  const v=$('#randN').value.trim();
+  if(!/^\d{1,3}$/.test(v)||+v<1||+v>MAX_NODES){toast(`La cantidad debe ser entre 1 y ${MAX_NODES}`);$('#randN').focus();return;}
+  const n=+v,max=n<=40?99:999,set=new Set();
+  while(set.size<n)set.add(1+Math.floor(Math.random()*max));
+  const keys=[...set];const ta=$('#list');ta.value=keys.join(', ');autoGrow();
+  doBuild(keys,`Árbol aleatorio de ${n} datos`);
 };
+function autoGrow(){const ta=$('#list');ta.style.height='auto';ta.style.height=Math.min(96,ta.scrollHeight+3)+'px';}
+$('#list').addEventListener('input',autoGrow);
+$('#randN').addEventListener('keydown',e=>{if(e.key==='Enter')$('#bRand').click();});
 $('#modeSeg').onclick=e=>{const b=e.target.closest('button');if(!b)return;MODE=b.dataset.m;
   [...$('#modeSeg').children].forEach(x=>x.classList.toggle('on',x===b));
   toast(MODE==='suc'?'Dos hijos: se reemplaza por el sucesor (menor del lado derecho)':'Dos hijos: se reemplaza por el predecesor (mayor del lado izquierdo)');};
@@ -977,7 +1006,7 @@ $('#speed').addEventListener('input',()=>{syncSpeed();if(playing)schedule();});s
 $('#bPlay').onclick=togglePlay;$('#bNext').onclick=next;$('#bPrev').onclick=prev;
 $('#bFirst').onclick=()=>{pause();show(0);};$('#bLast').onclick=()=>{pause();show(frames.length-1);};
 document.addEventListener('keydown',e=>{
-  if(e.target.matches('input[type=text]'))return;
+  if(e.target.matches('input[type=text],textarea'))return;
   if(e.key==='ArrowRight'){e.preventDefault();next();}
   else if(e.key==='ArrowLeft'){e.preventDefault();prev();}
   else if(e.key===' '){e.preventDefault();togglePlay();}
