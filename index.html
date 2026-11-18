@@ -181,6 +181,16 @@ body.exp #xSub{font-weight:800;font-size:14.5px;color:var(--sub);margin-top:2px}
 body.exp .stage-head{grid-area:sh}
 body.exp .stage{grid-area:st;min-height:0;overflow:hidden}
 body.exp .legend{display:none}
+.zoom,.zhint{display:none}
+body.exp .stage{cursor:grab;touch-action:none;user-select:none;-webkit-user-select:none}
+body.exp .stage.dragging{cursor:grabbing}
+body.exp .zoom{display:flex;align-items:center;gap:4px;position:absolute;right:8px;bottom:8px;background:#fff;border:1.5px solid #E3D8C6;border-radius:14px;padding:4px;box-shadow:0 8px 20px -10px rgba(80,50,10,.45);z-index:3;cursor:default}
+.zoom button{border:0;background:var(--cream);color:#5F5447;font-weight:900;font-size:18px;width:34px;height:32px;border-radius:10px;cursor:pointer;line-height:1}
+.zoom button:hover{background:var(--orange-l);color:var(--orange-d)}
+.zoom button.fit{width:auto;padding:0 12px;font-size:13.5px}
+#zVal{font-family:var(--mono);font-weight:800;font-size:13px;color:#6F6458;min-width:50px;text-align:center}
+body.exp .zhint{display:block;position:absolute;left:10px;bottom:10px;font-size:12px;font-weight:800;color:#A0968A;background:rgba(255,255,255,.85);padding:4px 8px;border-radius:8px;pointer-events:none;z-index:2;transition:opacity .4s}
+body.exp .zhint.off{opacity:0}
 body.exp .player{grid-area:pl;align-self:end;padding:6px 8px;gap:6px}
 body.exp .controls{grid-area:ct;padding:6px 8px;gap:5px;align-self:end}
 body.exp .ib{width:32px;height:32px;border-radius:11px}
@@ -261,6 +271,13 @@ body.exp .looks{padding:3px 12px}body.exp .looks b{font-size:20px}
           </defs>
           <g id="gEU"></g><g id="gE"></g><g id="gP"></g><g id="gN"></g><g id="gM"></g>
         </svg>
+        <div class="zoom" id="zoomBar">
+          <button id="zOut" title="Alejar (−)" aria-label="Alejar">−</button>
+          <span id="zVal">100%</span>
+          <button id="zIn" title="Acercar (+)" aria-label="Acercar">+</button>
+          <button id="zFit" class="fit" title="Ver todo el árbol (0)">Ajustar</button>
+        </div>
+        <div class="zhint" id="zHint">Rueda del mouse o pellizco para hacer zoom · arrastra para moverte · doble clic para acercar</div>
       </div>
       <div class="legend">
         <span><i class="lg focus"></i>comparando</span>
@@ -754,7 +771,7 @@ function show(i,instant){
   if(!instant)follow();
 }
 function follow(){
-  if(EXP)return;
+  if(EXP){followZoom();return;}
   const st=$('#stage'),a=anim;if(!a||a.to.W<=st.clientWidth+2)return;
   let x=null;const m=a.to.marks.s||a.to.marks.k;
   if(m&&m.op>0)x=m.x;
@@ -853,7 +870,8 @@ function draw(s,a,e,time){
   used.clear();
   const f=a.f,pf=a.pf,r=s.r,half=s.half,lv=s.lv;
   const VW=Math.max(s.W,a.to.W);svg.setAttribute('viewBox',`0 0 ${VW} ${s.H}`);
-  if(EXP){const st=$('#stage');const sw=st.clientWidth,sh=st.clientHeight;svg.setAttribute('width',sw);svg.setAttribute('height',sh);svg.style.width=sw+'px';svg.setAttribute('preserveAspectRatio','xMidYMid meet');}
+  if(EXP){const st=$('#stage');const sw=st.clientWidth,sh=st.clientHeight;svg.setAttribute('width',sw);svg.setAttribute('height',sh);svg.style.width=sw+'px';
+    const vb=viewRect(VW,s.H,sw,sh);svg.setAttribute('viewBox',`${vb.x} ${vb.y} ${vb.w} ${vb.h}`);svg.setAttribute('preserveAspectRatio','xMidYMid meet');}
   else{svg.setAttribute('height',s.H);svg.setAttribute('width',VW);svg.style.width=VW+'px';svg.setAttribute('preserveAspectRatio','xMinYMin meet');}
   const vis=new Set(f.visited),pathSet=new Set(f.path),spathSet=new Set(f.spath);
   const nodeStyle=id=>{
@@ -1053,7 +1071,57 @@ new ResizeObserver(()=>{const st=$('#stage');const w=Math.max(280,st.clientWidth
   if(Math.abs(w-W)>1||(EXP&&Math.abs(h-lastSH)>1)){W=w;lastSH=h;if(frames.length)startTween(frames[idx],true);}}).observe($('#stage'));
 const ICON_EXP='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M14 4h6v6M10 20H4v-6M20 4l-7 7M4 20l7-7"/></svg>';
 const ICON_SHR='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M20 10h-6V4M4 14h6v6M14 10l7-7M10 14l-7 7"/></svg>';
+/* ---------- zoom y desplazamiento (vista ampliada) ---------- */
+const VIEW={Z:1,cx:null,cy:null,tcx:null,tcy:null,last:null};
+const ZMIN=1,ZMAX=14;
+function viewRect(VW,H,sw,sh){
+  const s0=Math.min(sw/VW,sh/H),sc=s0*VIEW.Z,w=sw/sc,h=sh/sc;
+  if(VIEW.cx==null){VIEW.cx=VIEW.tcx=VW/2;VIEW.cy=VIEW.tcy=H/2;}
+  VIEW.cx+=(VIEW.tcx-VIEW.cx)*0.22;VIEW.cy+=(VIEW.tcy-VIEW.cy)*0.22;
+  const r={x:VIEW.cx-w/2,y:VIEW.cy-h/2,w,h,sc};VIEW.last=r;return r;
+}
+function updZ(){$('#zVal').textContent=Math.round(VIEW.Z*100)+'%';}
+function resetView(){VIEW.Z=1;VIEW.cx=VIEW.cy=VIEW.tcx=VIEW.tcy=null;updZ();}
+function zoomAt(f,px,py){ /* px,py: posición en pantalla dentro del escenario */
+  const st=$('#stage'),L=VIEW.last;if(!L)return;
+  const nz=clamp(VIEW.Z*f,ZMIN,ZMAX);if(nz===VIEW.Z)return;
+  const sw=st.clientWidth,sh=st.clientHeight;
+  if(px==null){px=sw/2;py=sh/2;}
+  const ux=L.x+px/L.sc,uy=L.y+py/L.sc;
+  const nsc=L.sc*nz/VIEW.Z,nw=sw/nsc,nh=sh/nsc;
+  VIEW.Z=nz;
+  if(nz<=1.001){VIEW.Z=1;VIEW.tcx=VIEW.cx=null;VIEW.tcy=VIEW.cy=null;}
+  else{VIEW.cx=VIEW.tcx=ux-px/nsc+nw/2;VIEW.cy=VIEW.tcy=uy-py/nsc+nh/2;}
+  updZ();hideHint();
+}
+function hideHint(){$('#zHint').classList.add('off');}
+(function(){
+  const st=$('#stage');const ptrs=new Map();let pinch=null,moved=false;
+  const loc=e=>{const r=st.getBoundingClientRect();return{x:e.clientX-r.left,y:e.clientY-r.top};};
+  st.addEventListener('wheel',e=>{if(!EXP)return;e.preventDefault();const p=loc(e);zoomAt(Math.exp(-e.deltaY*(e.ctrlKey?0.01:0.0018)),p.x,p.y);},{passive:false});
+  st.addEventListener('pointerdown',e=>{if(!EXP||e.target.closest('.zoom'))return;st.setPointerCapture(e.pointerId);ptrs.set(e.pointerId,loc(e));moved=false;
+    if(ptrs.size===2){const [a,b]=[...ptrs.values()];pinch={d:Math.hypot(a.x-b.x,a.y-b.y)};}else st.classList.add('dragging');});
+  st.addEventListener('pointermove',e=>{if(!EXP||!ptrs.has(e.pointerId))return;const p=loc(e),prev=ptrs.get(e.pointerId);ptrs.set(e.pointerId,p);
+    if(ptrs.size===2&&pinch){const [a,b]=[...ptrs.values()];const d=Math.hypot(a.x-b.x,a.y-b.y);if(pinch.d>0)zoomAt(d/pinch.d,(a.x+b.x)/2,(a.y+b.y)/2);pinch.d=d;moved=true;return;}
+    const L=VIEW.last;if(!L||VIEW.Z<=1)return;const dx=p.x-prev.x,dy=p.y-prev.y;if(Math.abs(dx)+Math.abs(dy)>0)moved=true;
+    VIEW.cx=VIEW.tcx=VIEW.cx-dx/L.sc;VIEW.cy=VIEW.tcy=VIEW.cy-dy/L.sc;hideHint();});
+  const up=e=>{ptrs.delete(e.pointerId);if(ptrs.size<2)pinch=null;if(!ptrs.size)st.classList.remove('dragging');};
+  st.addEventListener('pointerup',up);st.addEventListener('pointercancel',up);
+  st.addEventListener('dblclick',e=>{if(!EXP||e.target.closest('.zoom'))return;const p=loc(e);zoomAt(2.2,p.x,p.y);});
+  $('#zIn').onclick=()=>zoomAt(1.5);$('#zOut').onclick=()=>zoomAt(1/1.5);$('#zFit').onclick=()=>{resetView();};
+  document.addEventListener('keydown',e=>{if(!EXP||e.target.matches('input[type=text],textarea'))return;
+    if(e.key==='+'||e.key==='='){zoomAt(1.4);}else if(e.key==='-'||e.key==='_'){zoomAt(1/1.4);}else if(e.key==='0'){resetView();}});
+})();
+function followZoom(){
+  const a=anim,L=VIEW.last;if(!EXP||!a||!L||VIEW.Z<=1.01)return;
+  let p=null;const m=a.to.marks.s||a.to.marks.k;
+  if(m&&m.op>0)p=m;else{const id=Object.keys(a.f.states).find(id=>a.to.nodes[id]&&!a.to.nodes[id].gone);if(id)p=a.to.nodes[id];}
+  if(!p)return;
+  const mx=L.w*0.18,my=L.h*0.18;
+  if(p.x<L.x+mx||p.x>L.x+L.w-mx||p.y<L.y+my||p.y>L.y+L.h-my){VIEW.tcx=p.x;VIEW.tcy=p.y;}
+}
 function setExp(on){
+  resetView();$('#zHint').classList.remove('off');
   EXP=on;document.body.classList.toggle('exp',on);
   const b=$('#bExpand');b.innerHTML=on?ICON_SHR:ICON_EXP;b.title=on?'Volver a la vista normal (Esc)':'Ver el árbol completo en pantalla grande';
   $('#stage').scrollLeft=0;
