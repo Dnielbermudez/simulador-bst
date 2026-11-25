@@ -1320,7 +1320,7 @@ const ICON_EXP='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strok
 const ICON_SHR='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M20 10h-6V4M4 14h6v6M14 10l7-7M10 14l-7 7"/></svg>';
 /* ---------- zoom y desplazamiento (vista ampliada) ---------- */
 const VIEW={Z:1,cx:null,cy:null,tcx:null,tcy:null,last:null};
-const ZMIN=1,ZMAX=14;
+const ZMIN=0.25,ZMAX=14;
 function viewRect(VW,H,sw,sh){
   const s0=Math.min(sw/VW,sh/H),sc=s0*VIEW.Z,w=sw/sc,h=sh/sc;
   if(VIEW.cx==null||(VIEW.Z<=1.001&&!VIEW.free)){VIEW.tcx=VW/2;VIEW.tcy=H/2;if(VIEW.cx==null||(VIEW.Z<=1.001&&!VIEW.free)){VIEW.cx=VIEW.tcx;VIEW.cy=VIEW.tcy;}}
@@ -1337,7 +1337,7 @@ function zoomAt(f,px,py){ /* px,py: posición en pantalla dentro del escenario *
   const ux=L.x+px/L.sc,uy=L.y+py/L.sc;
   const nsc=L.sc*nz/VIEW.Z,nw=sw/nsc,nh=sh/nsc;
   VIEW.Z=nz;
-  if(nz<=1.001){VIEW.Z=1;VIEW.free=false;VIEW.tcx=VIEW.cx=null;VIEW.tcy=VIEW.cy=null;}
+  if(nz<=1.001&&!VIEW.free){VIEW.tcx=VIEW.cx=null;VIEW.tcy=VIEW.cy=null;}
   else{VIEW.cx=VIEW.tcx=ux-px/nsc+nw/2;VIEW.cy=VIEW.tcy=uy-py/nsc+nh/2;}
   updZ();hideHint();
 }
