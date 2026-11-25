@@ -1117,8 +1117,8 @@ function hideHint(){$('#zHint').classList.add('off');}
     const unit=e.deltaMode===1?16:e.deltaMode===2?st.clientHeight:1;
     const dx=e.deltaX*unit,dy=e.deltaY*unit;
     const mouseNotch=e.deltaMode===1||(dx===0&&Math.abs(dy)>=50&&Number.isInteger(e.deltaY));
-    /* fuera de la vista ampliada: si el árbol no tiene zoom, la rueda o los dos dedos en vertical siguen bajando la página */
-    if(!EXP&&!e.ctrlKey&&VIEW.Z<=1.001&&!VIEW.free&&(mouseNotch||Math.abs(dy)>Math.abs(dx)))return;
+    /* fuera de la vista ampliada: la rueda del mouse hace zoom; dos dedos en vertical sin zoom siguen bajando la página */
+    if(!EXP&&!e.ctrlKey&&!mouseNotch&&VIEW.Z<=1.001&&!VIEW.free&&Math.abs(dy)>Math.abs(dx))return;
     e.preventDefault();
     if(e.ctrlKey){zoomAt(clamp(Math.exp(-dy*0.03),0.7,1.45),p.x,p.y);return;}            /* pellizco en touchpad */
     if(mouseNotch){zoomAt(Math.exp(-dy*0.0018),p.x,p.y);return;}           /* rueda del mouse */
