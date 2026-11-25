@@ -134,11 +134,10 @@ button{font-family:inherit}
 kbd{font-family:var(--mono);font-size:11.5px;background:#fff;border:1.5px solid #E3D8C6;border-bottom-width:3px;border-radius:6px;padding:0 5px;color:#6F6458}
 
 /* controles */
-.controls{background:#fff;border:1.5px solid var(--line);border-radius:18px;display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);grid-template-areas:"num q" "list list" "rand opt";overflow:hidden}
-.sec{padding:10px 14px 12px;display:flex;flex-direction:column;gap:7px;min-width:0}
-.s-num{grid-area:num}.s-q{grid-area:q;border-left:1.5px solid var(--line)}
-.s-list{grid-area:list;border-top:1.5px solid var(--line);background:#FFFDF9}
-.s-rand{grid-area:rand;border-top:1.5px solid var(--line)}.s-opt{grid-area:opt;border-top:1.5px solid var(--line);border-left:1.5px solid var(--line)}
+.controls{background:var(--line);border:1.5px solid var(--line);border-radius:18px;display:grid;gap:1.5px;grid-template-columns:minmax(0,1fr) minmax(0,1fr);grid-template-areas:"num q" "rng opt" "list rand";overflow:hidden}
+.sec{background:#fff;padding:10px 14px 12px;display:flex;flex-direction:column;gap:7px;min-width:0}
+.s-num{grid-area:num}.s-q{grid-area:q}.s-rng{grid-area:rng}.s-opt{grid-area:opt}.s-rand{grid-area:rand}
+.s-list{grid-area:list;background:#FFFDF9}
 .sec h4{margin:0;font-weight:900;font-size:11.5px;letter-spacing:.15em;text-transform:uppercase;color:var(--orange-d)}
 .sec h4 .note{letter-spacing:0;text-transform:none;font-weight:800;color:#A0968A;font-size:12px;margin-left:6px}
 .sec .row{display:flex;gap:7px;flex-wrap:wrap;align-items:center}
@@ -146,16 +145,17 @@ kbd{font-family:var(--mono);font-size:11.5px;background:#fff;border:1.5px solid 
 .unit{font-weight:800;font-size:13.5px;color:#6F6458}
 .hintx{margin:0;font-size:12.5px;font-weight:800;color:#A0968A}
 .sec .seg button{padding:5px 11px;font-size:13.5px}
-@media (max-width:640px){.controls{grid-template-columns:minmax(0,1fr);grid-template-areas:"num" "q" "list" "rand" "opt"}.s-q,.s-opt{border-left:0;border-top:1.5px solid var(--line)}}
+@media (max-width:640px){.controls{grid-template-columns:minmax(0,1fr);grid-template-areas:"num" "q" "rng" "opt" "list" "rand"}}
 textarea#list{width:100%;font-family:var(--mono);font-size:14px;font-weight:700;color:var(--ink);border:1.5px solid #E3D8C6;border-radius:13px;padding:8px 12px;background:#FFFDF9;outline:none;resize:vertical;line-height:1.5;height:92px;min-height:60px;max-height:260px;transition:border-color .2s,box-shadow .2s}
 textarea#list:focus{border-color:var(--orange);box-shadow:0 0 0 4px #FFE9C7}
-#randN{width:64px;text-align:center}
+#randN,#ra,#rb{width:64px;text-align:center}
 .ctl-row{display:flex;gap:12px 20px;flex-wrap:wrap;align-items:flex-end}
 .field{display:flex;flex-direction:column;gap:7px}
 .field.grow{flex:1;min-width:260px}
 .lbl{font-weight:900;font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:#8C8174}
 .input-row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
 input[type=text]{font-family:var(--mono);font-size:15px;font-weight:700;color:var(--ink);border:1.5px solid #E3D8C6;border-radius:13px;padding:8px 12px;background:#FFFDF9;outline:none;transition:border-color .2s,box-shadow .2s}
+input.flash{animation:flash .6s ease}@keyframes flash{30%{background:#FFE2B0;border-color:#E8890C}}
 input[type=text]:focus{border-color:var(--orange);box-shadow:0 0 0 4px #FFE9C7}
 #num{width:86px}#list{flex:1;min-width:210px}
 .btn{font-weight:900;font-size:14.5px;border-radius:13px;padding:8px 14px;border:1.5px solid #E3D8C6;background:#fff;color:var(--ink);cursor:pointer;transition:transform .1s,border-color .2s;white-space:nowrap}
@@ -202,9 +202,8 @@ body.exp .ib.play{width:44px}
 body.exp .xbtn{width:38px;height:38px;background:#FFF0D6;border-color:#EDB769;color:#B85E0B}
 body.exp .speed{min-width:180px;padding:4px 10px}
 body.exp .btn{padding:5px 10px;font-size:13px;border-radius:11px}
-body.exp .controls{grid-area:ct;align-self:end;grid-template-columns:repeat(3,minmax(0,1fr));grid-template-areas:"num q opt" "list list rand"}
+body.exp .controls{grid-area:ct;align-self:end;grid-template-columns:repeat(4,minmax(0,1fr));grid-template-areas:"num q rng opt" "list list list rand"}
 body.exp .sec{padding:6px 10px 8px;gap:5px}
-body.exp .s-opt{border-top:0}body.exp .s-rand{border-left:1.5px solid var(--line)}
 body.exp .hintx,body.exp .sec h4 .note{display:none}
 body.exp .unit,body.exp .chk{font-size:12.5px}
 body.exp .btn.primary{box-shadow:0 2px 0 #D07A08}
@@ -253,6 +252,10 @@ body.exp body.exp .looks{padding:3px 12px}body.exp .looks b{font-size:20px}
         <option value="minimo">Minimo.java</option>
         <option value="maximo">Maximo.java</option>
         <option value="inorden">Inorden.java</option>
+        <option value="sucesor">Sucesor.java</option>
+        <option value="predecesor">Predecesor.java</option>
+        <option value="rango">Rango.java</option>
+        <option value="balancear">Balancear.java</option>
       </select></label><span class="fmode" id="fmode"></span></div>
       <div class="win-body" id="code"><svg class="loop" id="loop"></svg><div id="lines"></div></div>
     </div>
@@ -292,7 +295,7 @@ body.exp body.exp .looks{padding:3px 12px}body.exp .looks b{font-size:20px}
           <button id="zIn" title="Acercar (+)" aria-label="Acercar">+</button>
           <button id="zFit" class="fit" title="Ver todo el árbol (0)">Ajustar</button>
         </div>
-        <div class="zhint" id="zHint">Pellizca el touchpad o usa la rueda para hacer zoom · desliza dos dedos o arrastra para moverte</div>
+        <div class="zhint" id="zHint">Pellizca el touchpad o usa la rueda para hacer zoom · desliza dos dedos o arrastra para moverte · clic en un nodo para elegirlo</div>
       </div>
       <div class="legend">
         <span><i class="lg focus"></i>comparando</span>
@@ -319,12 +322,16 @@ body.exp body.exp .looks{padding:3px 12px}body.exp .looks b{font-size:20px}
       </div>
       <div class="controls">
           <section class="sec s-num">
-            <h4>Un número</h4>
+            <h4>Un número <span class="note">o haz clic en un nodo</span></h4>
             <div class="row">
               <input type="text" id="num" inputmode="numeric" placeholder="Ej. 65" maxlength="3" aria-label="Número">
               <button class="btn primary" id="bIns">Insertar</button>
               <button class="btn" id="bSea">Buscar</button>
               <button class="btn" id="bDel">Eliminar</button>
+            </div>
+            <div class="row">
+              <button class="btn" id="bSuc">Sucesor</button>
+              <button class="btn" id="bPre">Predecesor</button>
             </div>
           </section>
           <section class="sec s-q">
@@ -335,13 +342,35 @@ body.exp body.exp .looks{padding:3px 12px}body.exp .looks b{font-size:20px}
               <button class="btn" id="bIno">Recorrido inorden</button>
             </div>
           </section>
+          <section class="sec s-rng">
+            <h4>Rango</h4>
+            <div class="row">
+              <span class="unit">Entre</span>
+              <input type="text" id="ra" inputmode="numeric" value="35" maxlength="3" aria-label="Desde">
+              <span class="unit">y</span>
+              <input type="text" id="rb" inputmode="numeric" value="65" maxlength="3" aria-label="Hasta">
+              <button class="btn primary" id="bRange">Buscar rango</button>
+            </div>
+          </section>
+          <section class="sec s-opt">
+            <h4>Opciones</h4>
+            <div class="row">
+              <span class="unit">Si tiene dos hijos:</span>
+              <div class="seg" id="modeSeg"><button data-m="suc" class="on">Sucesor</button><button data-m="pred">Predecesor</button></div>
+            </div>
+            <div class="row">
+              <button class="btn" id="bBal">Balancear árbol</button>
+              <button class="btn" id="bUndo">Deshacer</button>
+              <button class="btn" id="bClear">Vaciar árbol</button>
+            </div>
+          </section>
           <section class="sec s-list">
             <h4>Lista de números <span class="note">puedes editarla</span></h4>
             <textarea id="list" rows="1" spellcheck="false" aria-label="Lista de números (editable)">50, 30, 70, 20, 40, 60, 80</textarea>
             <div class="row">
               <button class="btn primary" id="bList">Insertar lista</button>
               <button class="btn" id="bBuild">Construir de una vez</button>
-              <label class="chk"><input type="checkbox" id="fresh" checked> Empezar desde árbol vacío</label>
+              <label class="chk"><input type="checkbox" id="fresh" checked> Desde árbol vacío</label>
             </div>
           </section>
           <section class="sec s-rand">
@@ -352,17 +381,6 @@ body.exp body.exp .looks{padding:3px 12px}body.exp .looks b{font-size:20px}
               <button class="btn primary" id="bRand">Generar</button>
             </div>
             <p class="hintx">Los números quedan en la lista para editarlos.</p>
-          </section>
-          <section class="sec s-opt">
-            <h4>Opciones</h4>
-            <div class="row">
-              <span class="unit">Si tiene dos hijos:</span>
-              <div class="seg" id="modeSeg"><button data-m="suc" class="on">Sucesor</button><button data-m="pred">Predecesor</button></div>
-            </div>
-            <div class="row">
-              <button class="btn" id="bUndo">Deshacer</button>
-              <button class="btn" id="bClear">Vaciar árbol</button>
-            </div>
           </section>
         </div>
     </div>
@@ -464,6 +482,58 @@ const CODE={
     {c:'    inorden(nodo.der);'},
     {c:'}'},
     {c:'inorden(raiz);'}]}
+  ,rango:{name:'Rango.java',loopTo:1,lines:[
+    {c:'void rango(Nodo nodo, int a, int b) {'},
+    {c:'    if (nodo == null) return;'},
+    {c:'    if (a < nodo.clave)'},
+    {c:'        rango(nodo.izq, a, b);'},
+    {c:'    if (a <= nodo.clave && nodo.clave <= b)'},
+    {c:'        System.out.println(nodo.clave);'},
+    {c:'    if (nodo.clave < b)'},
+    {c:'        rango(nodo.der, a, b);'},
+    {c:'}'},
+    {c:'rango(raiz, {k});'}]},
+  sucesor:{name:'Sucesor.java',loopTo:2,lines:[
+    {c:'Nodo sucesor(Nodo raiz, int k) {'},
+    {c:'    Nodo suc = null, nodo = raiz;'},
+    {c:'    while (nodo != null && nodo.clave != k) {'},
+    {c:'        if (k < nodo.clave) {'},
+    {c:'            suc = nodo;'},
+    {c:'            nodo = nodo.izq;'},
+    {c:'        } else nodo = nodo.der;'},
+    {c:'    }'},
+    {c:'    if (nodo == null) return null;'},
+    {c:'    if (nodo.der != null)'},
+    {c:'        return minimo(nodo.der);'},
+    {c:'    return suc;'},
+    {c:'}'},
+    {c:'sucesor(raiz, {k});'}]},
+  predecesor:{name:'Predecesor.java',loopTo:2,lines:[
+    {c:'Nodo predecesor(Nodo raiz, int k) {'},
+    {c:'    Nodo pred = null, nodo = raiz;'},
+    {c:'    while (nodo != null && nodo.clave != k) {'},
+    {c:'        if (k > nodo.clave) {'},
+    {c:'            pred = nodo;'},
+    {c:'            nodo = nodo.der;'},
+    {c:'        } else nodo = nodo.izq;'},
+    {c:'    }'},
+    {c:'    if (nodo == null) return null;'},
+    {c:'    if (nodo.izq != null)'},
+    {c:'        return maximo(nodo.izq);'},
+    {c:'    return pred;'},
+    {c:'}'},
+    {c:'predecesor(raiz, {k});'}]},
+  balancear:{name:'Balancear.java',loopTo:1,lines:[
+    {c:'Nodo construir(int[] orden, int ini, int fin) {'},
+    {c:'    if (ini > fin) return null;'},
+    {c:'    int medio = (ini + fin) / 2;'},
+    {c:'    Nodo nodo = new Nodo(orden[medio]);'},
+    {c:'    nodo.izq = construir(orden, ini, medio - 1);'},
+    {c:'    nodo.der = construir(orden, medio + 1, fin);'},
+    {c:'    return nodo;'},
+    {c:'}'},
+    {c:'// orden = recorrido inorden (datos ordenados)'},
+    {c:'raiz = construir(orden, 0, n - 1);'}]}
 };
 CODE.eliminarPred={name:'Eliminar.java',loopTo:1,lines:CODE.eliminar.lines.map((l,i)=>
   i===9?{c:'        Nodo p = maximo(nodo.izq);'}:i===10?{c:'        nodo.clave = p.clave;'}:i===11?{c:'        nodo.izq = eliminar(nodo.izq, p.clave);'}:l)};
@@ -710,13 +780,142 @@ function opInorder(ctx){
   ctx.push({...base,line:6,title:'Los datos salieron ordenados',subtitle:'El inorden de un BST da las claves de menor a mayor sin ordenar nada aparte',states,looks:ids.length});
 }
 
+/* ---------- Rango [a, b] ---------- */
+function opRange(ctx,a,b){
+  if(a>b){const x=a;a=b;b=x;}
+  const t=ctx.tree,base={file:'rango',callArg:`${a}, ${b}`,looksLabel:'NODOS VISITADOS'};
+  ctx.log.push({t:'cmd',s:`rango(${a}, ${b})`});
+  ctx.push({...base,line:9,title:`Buscar todos entre ${a} y ${b}`,subtitle:'Solo se baja por las ramas donde puede haber resultados; lo demás se descarta sin mirarlo'});
+  if(!t.root){ctx.log.push({t:'err',s:'→ el árbol está vacío'});ctx.push({...base,line:1,badges:{1:true},title:'El árbol está vacío',subtitle:'No hay nada que buscar',gaps:{root:'miss'}});return;}
+  const visited=[],path=[],found=[];let looks=0;
+  ctx.log.push({t:'ok',s:'→ '});const li=ctx.log.length-1;
+  const states=(cur,cs)=>{const o={};found.forEach(id=>o[id]='done');if(cur)o[cur]=cs||'focus';return o;};
+  const common=()=>({...base,path:path.slice(),visited:visited.slice(),dim:true,looks});
+  (function go(id,from){
+    if(!id)return;
+    looks++;visited.push(id);if(from)path.push(from+'>'+id);
+    const n=t.nodes[id],k=n.key,goL=a<k;
+    ctx.push({...common(),line:goL?3:2,badges:{1:false,2:goL},loop:goL&&!!n.l,markers:[{at:id,v:'?'}],states:states(id),
+      title:goL?`${a} < ${k}: puede haber resultados a la izquierda`:`${k} ≤ ${a}: su lado izquierdo es menor que ${a}`,
+      subtitle:goL?(n.l?'Bajamos por su lado izquierdo':'Pero no tiene hijo izquierdo'):'Ese lado se descarta sin visitarlo'});
+    if(goL)go(n.l,id);
+    const inR=a<=k&&k<=b;
+    if(inR){
+      found.push(id);ctx.log[li]={t:'ok',s:'→ '+found.map(x=>t.nodes[x].key).join(' ')};
+      ctx.push({...common(),line:5,badges:{4:true},markers:[{at:id,v:'?'}],states:states(id,'found'),
+        title:`${k} está entre ${a} y ${b}: se imprime`,subtitle:found.length===1?'Ya va 1 resultado':`Ya van ${found.length} resultados`});
+    }
+    const goR=k<b;
+    ctx.push({...common(),line:goR?7:6,badges:{4:inR,6:goR},loop:goR&&!!n.r,markers:[{at:id,v:'?'}],states:states(id,inR?'found':'focus'),
+      title:goR?`${k} < ${b}: puede haber resultados a la derecha`:`${k} ≥ ${b}: su lado derecho es mayor que ${b}`,
+      subtitle:goR?(n.r?'Bajamos por su lado derecho':'Pero no tiene hijo derecho'):'Ese lado se descarta sin visitarlo'});
+    if(goR)go(n.r,id);
+  })(t.root,null);
+  if(!found.length)ctx.log[li]={t:'err',s:'→ no hay datos en ese rango'};
+  ctx.log.push({t:'info',s:`visitados ${looks} de ${count(t)} nodos`});
+  const st={};found.forEach(id=>st[id]='found');
+  ctx.push({...base,line:9,path:path.slice(),visited:visited.slice(),dim:true,looks,states:st,
+    title:found.length?`${found.length} ${plural(found.length,'resultado','resultados')} entre ${a} y ${b}`:`No hay datos entre ${a} y ${b}`,
+    subtitle:`Se visitaron ${looks} de ${count(t)} nodos. Eso es O(h + k): bajar por la altura más los k resultados`});
+}
+
+/* ---------- Sucesor / predecesor de k ---------- */
+function opSuccPred(ctx,k,isSuc){
+  const t=ctx.tree,file=isSuc?'sucesor':'predecesor',who=isSuc?'sucesor':'predecesor',sym=isSuc?'s':'p';
+  const base={file,callArg:k};let looks=0;const path=[],visited=[];
+  ctx.log.push({t:'cmd',s:`${file}(${k})`});
+  ctx.push({...base,line:13,title:`${isSuc?'Sucesor':'Predecesor'} de ${k}`,
+    subtitle:isSuc?'El sucesor es el número que sigue después de k en orden':'El predecesor es el número que va justo antes de k en orden',markers:[{start:true,v:k}]});
+  if(!t.root){ctx.log.push({t:'err',s:'→ el árbol está vacío'});ctx.push({...base,line:8,badges:{8:true},title:'El árbol está vacío',subtitle:`No hay ${who}`,gaps:{root:'miss'}});return;}
+  let cur=t.root,cand=null;const goSide=isSuc?'l':'r';
+  for(;;){
+    const n=t.nodes[cur];looks++;visited.push(cur);
+    if(k===n.key)break;
+    const side=k<n.key?'l':'r',isCand=side===goSide,child=n[side];
+    if(isCand)cand=cur;
+    if(child)path.push(cur+'>'+child);
+    const st={[cur]:isCand?'succFocus':'focus'};if(cand&&cand!==cur)st[cand]='succ';
+    const mk=[{at:cur,v:k}];if(cand)mk.push({at:cand,v:sym,kind:'s',label:'candidato'});
+    ctx.push({...base,line:isCand?4:6,badges:{2:true,3:isCand},loop:true,markers:mk,states:st,path:path.slice(),visited:visited.slice(),dim:true,looks,
+      gaps:child?{}:{[cur+':'+side]:'miss'},
+      title:isCand?(isSuc?`${k} < ${n.key}: ${n.key} es candidato a sucesor`:`${k} > ${n.key}: ${n.key} es candidato a predecesor`)
+                  :(isSuc?`${k} > ${n.key}: ve a la derecha`:`${k} < ${n.key}: ve a la izquierda`),
+      subtitle:isCand?(isSuc?'Bajamos a la izquierda: este nodo es mayor que k, así que lo guardamos por si acaso':'Bajamos a la derecha: este nodo es menor que k, así que lo guardamos por si acaso')
+                     :(isSuc?'Este nodo es menor que k: no sirve como sucesor':'Este nodo es mayor que k: no sirve como predecesor')});
+    if(!child){
+      ctx.log.push({t:'err',s:`→ ${k} no está en el árbol`});
+      ctx.push({...base,line:8,badges:{2:false,8:true},markers:[{gap:{p:cur,s:side},v:k}],path:path.slice(),visited:visited.slice(),dim:true,looks,gaps:{[cur+':'+side]:'miss'},
+        title:`${k} no está en el árbol`,subtitle:`Para buscar su ${who}, primero tiene que existir`});
+      return;
+    }
+    cur=child;
+  }
+  const n=t.nodes[cur],first=isSuc?'r':'l',then=isSuc?'l':'r';
+  const candMk=cand?[{at:cand,v:sym,kind:'s',label:'candidato'}]:[];
+  ctx.push({...base,line:9,badges:{2:false,8:false,9:!!n[first]},markers:[{at:cur,v:k},...candMk],states:Object.assign(cand?{[cand]:'succ'}:{},{[cur]:'dup'}),
+    path:path.slice(),visited:visited.slice(),dim:true,looks,
+    title:`Encontramos ${k}: ¿tiene hijo ${isSuc?'derecho':'izquierdo'}?`,
+    subtitle:isSuc?'Si lo tiene, el sucesor está abajo a la derecha; si no, es el candidato que guardamos':'Si lo tiene, el predecesor está abajo a la izquierda; si no, es el candidato que guardamos'});
+  if(n[first]){
+    let s=n[first];const spath=[cur+'>'+s];visited.push(s);
+    ctx.push({...base,line:10,badges:{9:true},markers:[{at:cur,v:k},{at:s,v:sym,kind:'s',label:who}],states:{[cur]:'dup',[s]:'succFocus'},
+      path:path.slice(),spath:spath.slice(),visited:visited.slice(),dim:true,looks,
+      title:isSuc?`Una vez a la derecha: ${t.nodes[s].key}`:`Una vez a la izquierda: ${t.nodes[s].key}`,
+      subtitle:isSuc?'El sucesor es el menor de su lado derecho: ahora siempre a la izquierda':'El predecesor es el mayor de su lado izquierdo: ahora siempre a la derecha'});
+    while(t.nodes[s][then]){
+      const nx=t.nodes[s][then];spath.push(s+'>'+nx);s=nx;visited.push(s);
+      ctx.push({...base,line:10,badges:{9:true},markers:[{at:cur,v:k},{at:s,v:sym,kind:'s',label:who}],states:{[cur]:'dup',[s]:'succFocus'},
+        path:path.slice(),spath:spath.slice(),visited:visited.slice(),dim:true,looks,
+        title:`Siempre a la ${isSuc?'izquierda':'derecha'}: ${t.nodes[s].key}`,subtitle:`Hay algo ${isSuc?'más pequeño':'más grande'} en ese lado: seguimos bajando`});
+    }
+    const sk=t.nodes[s].key;
+    ctx.log.push({t:'ok',s:`→ ${sk}`});
+    ctx.push({...base,line:10,badges:{9:true},markers:[{at:s,v:sym,kind:'s',label:who}],states:{[cur]:'dup',[s]:'succ'},
+      path:path.slice(),spath:spath.slice(),visited:visited.slice(),dim:true,looks,
+      title:`El ${who} de ${k} es ${sk}`,subtitle:isSuc?`Caso 1: tenía hijo derecho. ${sk} es el menor de los que son mayores que ${k}`:`Caso 1: tenía hijo izquierdo. ${sk} es el mayor de los que son menores que ${k}`});
+  }else if(cand){
+    const ck=t.nodes[cand].key;
+    ctx.log.push({t:'ok',s:`→ ${ck}`});
+    ctx.push({...base,line:11,badges:{9:false},markers:[{at:cur,v:k},{at:cand,v:sym,kind:'s',label:who}],states:{[cur]:'dup',[cand]:'succ'},
+      path:path.slice(),visited:visited.slice(),dim:true,looks,
+      title:`El ${who} de ${k} es ${ck}`,
+      subtitle:isSuc?`Caso 2: no tenía hijo derecho, así que es el candidato: el último nodo donde giramos a la izquierda`
+                    :`Caso 2: no tenía hijo izquierdo, así que es el candidato: el último nodo donde giramos a la derecha`});
+  }else{
+    ctx.log.push({t:'warn',s:`→ null: ${k} no tiene ${who}`});
+    ctx.push({...base,line:11,badges:{9:false},markers:[{at:cur,v:k}],states:{[cur]:'dup'},path:path.slice(),visited:visited.slice(),dim:true,looks,
+      title:`${k} no tiene ${who}`,subtitle:isSuc?`${k} es el máximo del árbol: no hay nada mayor`:`${k} es el mínimo del árbol: no hay nada menor`});
+  }
+}
+
+/* ---------- Balancear ---------- */
+function opBalance(ctx){
+  const t=ctx.tree,n=count(t),base={file:'balancear',callArg:'k'};
+  ctx.log.push({t:'cmd',s:'balancear()'});
+  if(n<3){ctx.log.push({t:'warn',s:'→ con menos de 3 nodos no hay nada que balancear'});ctx.push({...base,title:'Muy pocos nodos',subtitle:'Con menos de 3 nodos el árbol ya está lo más bajo posible'});return;}
+  const ids=inorderIds(t),h0=height(t);
+  const all={};ids.forEach(id=>all[id]='done');
+  ctx.push({...base,line:8,states:all,title:'Balancear el árbol',subtitle:`Paso 1: sacamos los ${n} datos en orden con el recorrido inorden`});
+  const nt={root:null,nodes:{}};
+  const build=(lo,hi)=>{if(lo>hi)return null;const m=(lo+hi)>>1,id=ids[m];nt.nodes[id]={key:t.nodes[id].key,l:null,r:null};nt.nodes[id].l=build(lo,m-1);nt.nodes[id].r=build(m+1,hi);return id;};
+  nt.root=build(0,ids.length-1);
+  const mid=t.nodes[nt.root].key;
+  ctx.push({...base,line:3,states:Object.assign({},all,{[nt.root]:'found'}),title:`El dato del medio (${mid}) será la raíz`,
+    subtitle:'Paso 2: en cada mitad se repite lo mismo: el del medio sube y los demás quedan a los lados'});
+  ctx.tree=nt;const h1=height(nt);
+  ctx.log.push({t:'ok',s:`→ altura ${h0} → ${h1}`});
+  ctx.push({...base,line:9,states:{[nt.root]:'new'},title:h1<h0?`Altura de ${h0} a ${h1}`:'Ya estaba balanceado',
+    subtitle:h1<h0?`Mismos ${n} datos, pero el árbol quedó lo más bajo posible. Es lo que hacen solos los árboles AVL y rojo-negro`:`La altura ya era la mínima posible (${h1})`});
+}
+
 /* ================= Estado de reproducción ================= */
-let EXP=false,frames=[],idx=0,playing=false,timer=null,speed=1,MODE='suc';
+let SEL=null,EXP=false,frames=[],idx=0,playing=false,timer=null,speed=1,MODE='suc';
 const history=[];
 function finalState(){const f=frames[frames.length-1];return{tree:f.tree,log:f.log};}
 function run(fn,opt={}){
   const autoplay=opt.autoplay!==false;
   const st=finalState();
+  SEL=null;
   history.push(st.tree);if(history.length>60)history.shift();
   const ctx=newCtx(st.tree,st.log);
   fn(ctx);
@@ -986,6 +1185,9 @@ function draw(s,a,e,time){
     attrs(el('ra','line',gM),{x1:R.x-r-28,y1:R.y,x2:R.x-r-5,y2:R.y,stroke:'#B85E0B','stroke-width':2.4,'stroke-linecap':'round','marker-end':'url(#ahr)',opacity:R.op});
   }
 
+  /* nodo elegido con clic */
+  if(SEL&&s.nodes[SEL]&&f.tree.nodes[SEL]){const N=s.nodes[SEL];
+    attrs(el('sel','circle',gM),{cx:N.x,cy:N.y,r:r+7,fill:'none',stroke:'#E8890C','stroke-width':2.6,'stroke-dasharray':'6 5','stroke-dashoffset':(-time/40)%22,opacity:N.op});}
   /* fichas (marcadores) */
   for(const kind in s.marks){
     const M=s.marks[kind];if(M.op<0.01)continue;
@@ -1061,6 +1263,7 @@ function doBuild(keys,label){
     ctx.push({file:'insertar',title:label||'Árbol construido',subtitle:'Se insertaron todos los números en el orden de la lista. Ahora busca, inserta o elimina'});
   },{autoplay:false});
 }
+$('#num').addEventListener('input',()=>{SEL=null;});
 $('#bIns').onclick=doInsert;$('#bSea').onclick=doSearch;$('#bDel').onclick=doDelete;
 $('#bList').onclick=doList;
 $('#bBuild').onclick=()=>{const k=readList();if(k)doBuild(k);};
@@ -1068,6 +1271,14 @@ $('#num').addEventListener('keydown',e=>{if(e.key==='Enter')doInsert();});
 $('#list').addEventListener('keydown',e=>{if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();doList();}});
 $('#bMin').onclick=()=>run(ctx=>opExtreme(ctx,true));
 $('#bMax').onclick=()=>run(ctx=>opExtreme(ctx,false));
+$('#bSuc').onclick=()=>{const k=readNum();if(k!==null)run(ctx=>opSuccPred(ctx,k,true));};
+$('#bPre').onclick=()=>{const k=readNum();if(k!==null)run(ctx=>opSuccPred(ctx,k,false));};
+$('#bRange').onclick=()=>{
+  const a=$('#ra').value.trim(),b=$('#rb').value.trim();
+  if(!/^\d{1,3}$/.test(a)||!/^\d{1,3}$/.test(b)){toast('Escribe los dos extremos del rango (0 a 999)');return;}
+  run(ctx=>opRange(ctx,+a,+b));};
+['#ra','#rb'].forEach(q=>$(q).addEventListener('keydown',e=>{if(e.key==='Enter')$('#bRange').click();}));
+$('#bBal').onclick=()=>run(ctx=>opBalance(ctx));
 $('#bIno').onclick=()=>run(ctx=>opInorder(ctx));
 $('#bUndo').onclick=()=>{
   if(!history.length){toast('No hay nada que deshacer');return;}
@@ -1132,7 +1343,14 @@ function zoomAt(f,px,py){ /* px,py: posición en pantalla dentro del escenario *
 }
 function hideHint(){$('#zHint').classList.add('off');}
 (function(){
-  const st=$('#stage');const ptrs=new Map();let pinch=null,moved=false;
+  const st=$('#stage');const ptrs=new Map();let pinch=null,moved=false,downAt=null;
+  function pickAt(px,py){
+    const L=VIEW.last,a=anim;if(!L||!a)return;
+    const ux=L.x+px/L.sc,uy=L.y+py/L.sc;let best=null,bd=1e9;
+    for(const id in a.to.nodes){const N=a.to.nodes[id];if(N.gone||!a.f.tree.nodes[id])continue;const d=Math.hypot(N.x-ux,N.y-uy);if(d<bd){bd=d;best=id;}}
+    if(!best||bd>a.to.r*1.35){SEL=null;return;}
+    SEL=best;const inp=$('#num');inp.value=a.f.tree.nodes[best].key;inp.classList.remove('flash');void inp.offsetWidth;inp.classList.add('flash');
+  }
   const loc=e=>{const r=st.getBoundingClientRect();return{x:e.clientX-r.left,y:e.clientY-r.top};};
   st.addEventListener('wheel',e=>{
     const p=loc(e);
@@ -1154,12 +1372,13 @@ function hideHint(){$('#zHint').classList.add('off');}
   st.addEventListener('gesturechange',e=>{e.preventDefault();const p=loc(e);zoomAt(e.scale/gs,p.x,p.y);gs=e.scale;});
   st.addEventListener('gestureend',e=>{e.preventDefault();});
   st.addEventListener('pointerdown',e=>{if(e.target.closest('.zoom'))return;st.setPointerCapture(e.pointerId);ptrs.set(e.pointerId,loc(e));moved=false;
+    downAt=ptrs.size===1?{...loc(e),id:e.pointerId}:null;
     if(ptrs.size===2){const [a,b]=[...ptrs.values()];pinch={d:Math.hypot(a.x-b.x,a.y-b.y)};}else st.classList.add('dragging');});
   st.addEventListener('pointermove',e=>{if(!ptrs.has(e.pointerId))return;const p=loc(e),prev=ptrs.get(e.pointerId);ptrs.set(e.pointerId,p);
     if(ptrs.size===2&&pinch){const [a,b]=[...ptrs.values()];const d=Math.hypot(a.x-b.x,a.y-b.y);if(pinch.d>0)zoomAt(d/pinch.d,(a.x+b.x)/2,(a.y+b.y)/2);pinch.d=d;moved=true;return;}
     const L=VIEW.last;if(!L)return;const dx=p.x-prev.x,dy=p.y-prev.y;if(Math.abs(dx)+Math.abs(dy)>0){moved=true;VIEW.free=true;}
     VIEW.cx=VIEW.tcx=VIEW.cx-dx/L.sc;VIEW.cy=VIEW.tcy=VIEW.cy-dy/L.sc;hideHint();});
-  const up=e=>{ptrs.delete(e.pointerId);if(ptrs.size<2)pinch=null;if(!ptrs.size)st.classList.remove('dragging');};
+  const up=e=>{if(e.type==='pointerup'&&downAt&&downAt.id===e.pointerId){const p=loc(e);if(Math.hypot(p.x-downAt.x,p.y-downAt.y)<6)pickAt(p.x,p.y);}downAt=null;ptrs.delete(e.pointerId);if(ptrs.size<2)pinch=null;if(!ptrs.size)st.classList.remove('dragging');};
   st.addEventListener('pointerup',up);st.addEventListener('pointercancel',up);
   st.addEventListener('dblclick',e=>{if(e.target.closest('.zoom'))return;const p=loc(e);zoomAt(2.2,p.x,p.y);});
   $('#zIn').onclick=()=>zoomAt(1.5);$('#zOut').onclick=()=>zoomAt(1/1.5);$('#zFit').onclick=()=>{resetView();};
