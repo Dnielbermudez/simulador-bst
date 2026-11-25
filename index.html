@@ -37,10 +37,14 @@ button{font-family:inherit}
 
 /* ventana de código */
 .win{border:1.5px solid var(--line);border-radius:22px;overflow:hidden;background:#fff;box-shadow:0 14px 34px -26px rgba(80,50,10,.45)}
-.win-bar{display:grid;grid-template-columns:70px 1fr 70px;align-items:center;background:var(--cream);padding:12px 18px;border-bottom:1.5px solid var(--line)}
+.win-bar{display:grid;grid-template-columns:70px 1fr 70px;gap:6px;align-items:center;background:var(--cream);padding:12px 18px;border-bottom:1.5px solid var(--line)}
 .dots{display:flex;gap:7px}.dots i{width:12px;height:12px;border-radius:50%;display:block}
 .dots i:nth-child(1){background:#EC6A5E}.dots i:nth-child(2){background:#F4BF4F}.dots i:nth-child(3){background:#3FB950}
-#fname{text-align:center;font-family:var(--mono);color:#8E8578;font-weight:700;font-size:15px}
+.fsel{justify-self:center;position:relative;display:inline-flex}
+.fsel::after{content:"";position:absolute;right:12px;top:50%;width:7px;height:7px;border-right:2.2px solid #B85E0B;border-bottom:2.2px solid #B85E0B;transform:translateY(-70%) rotate(45deg);pointer-events:none}
+#fname{appearance:none;-webkit-appearance:none;font-family:var(--mono);color:#6F6458;font-weight:800;font-size:14.5px;background:#fff;border:1.5px solid #E3D8C6;border-radius:11px;padding:5px 32px 5px 14px;cursor:pointer;outline:none;text-align:center}
+#fname:hover{border-color:var(--orange)}#fname:focus{border-color:var(--orange);box-shadow:0 0 0 3px #FFE9C7}
+.fmode{justify-self:end;font-size:11.5px;font-weight:900;letter-spacing:.06em;color:#A0968A;white-space:nowrap}
 .win-body{position:relative;padding:12px 12px 14px 0;overflow-x:auto}
 #lines{font-family:var(--mono);font-size:13.5px;font-weight:700;min-width:max-content}
 .ln{position:relative;display:flex;align-items:center;gap:12px;min-height:1.85em;padding:0 10px 0 36px;margin-left:8px;border-radius:12px;white-space:pre;transition:background .25s}
@@ -241,7 +245,15 @@ body.exp body.exp .looks{padding:3px 12px}body.exp .looks b{font-size:20px}
 
   <section class="main">
     <div class="win">
-      <div class="win-bar"><span class="dots"><i></i><i></i><i></i></span><span id="fname">Insertar.java</span><span></span></div>
+      <div class="win-bar"><span class="dots"><i></i><i></i><i></i></span><label class="fsel"><select id="fname" aria-label="Elegir algoritmo para ver su código">
+        <option value="insertar">Insertar.java</option>
+        <option value="buscar">Buscar.java</option>
+        <option value="eliminar">Eliminar.java · sucesor</option>
+        <option value="eliminarPred">Eliminar.java · predecesor</option>
+        <option value="minimo">Minimo.java</option>
+        <option value="maximo">Maximo.java</option>
+        <option value="inorden">Inorden.java</option>
+      </select></label><span class="fmode" id="fmode"></span></div>
       <div class="win-body" id="code"><svg class="loop" id="loop"></svg><div id="lines"></div></div>
     </div>
 
@@ -721,16 +733,26 @@ function prev(){pause();if(idx>0)show(idx-1);}
 
 /* ================= Render de textos y código ================= */
 let codeKey='',loopKey='';
+let codeView=null; /* algoritmo elegido a mano en la lista; null = sigue la simulación */
+const fileOf=f=>f.file==='eliminar'&&f.variant==='pred'?'eliminarPred':f.file;
+function renderCodePanel(){
+  const f=frames[idx],cur=fileOf(f);
+  if(codeView&&codeView!==cur){
+    renderCode({file:codeView==='eliminarPred'?'eliminar':codeView,variant:codeView==='eliminarPred'?'pred':'suc',line:-1,badges:{},loop:false,callArg:'k'});
+    $('#fmode').textContent='SOLO LECTURA';
+  }else{renderCode(f);$('#fmode').textContent='';}
+}
+$('#fname').addEventListener('change',e=>{codeView=e.target.value;renderCodePanel();});
 function renderCode(f){
-  const fileId=f.file==='eliminar'&&f.variant==='pred'?'eliminarPred':f.file;
+  const fileId=fileOf(f);
   const spec=CODE[fileId];
   const key=fileId+'|'+f.callArg;
   const box=$('#lines');
   if(key!==codeKey){
     codeKey=key;loopKey='';
-    $('#fname').textContent=spec.name;
     box.innerHTML=spec.lines.map((l,i)=>`<div class="ln${l.c?'':' blank'}" data-i="${i}"><span class="src">${hl(l.c,f.callArg)}</span>${l.pill?`<span class="cls">${esc(l.pill)}</span>`:''}<span class="bdg" data-v=""></span></div>`).join('');
   }
+  $('#fname').value=fileId;
   const lines=box.children;
   for(let i=0;i<lines.length;i++){
     const ln=lines[i];ln.classList.toggle('on',i===f.line);
@@ -784,7 +806,7 @@ function renderExpl(){
 $('#expl').onclick=e=>{const li=e.target.closest('li');if(!li)return;pause();show(+li.dataset.i);};
 function show(i,instant){
   idx=i;const f=frames[i];
-  renderCode(f);renderTexts(f);updatePlayer();renderExpl();
+  codeView=null;renderCodePanel();renderTexts(f);updatePlayer();renderExpl();
   startTween(f,instant);
   if(!instant)follow();
 }
