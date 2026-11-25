@@ -181,8 +181,8 @@ input[type=text]:focus{border-color:var(--orange);box-shadow:0 0 0 4px #FFE9C7}
 body.exp{overflow:hidden}
 body.exp::before{content:"";position:fixed;inset:0;background:rgba(36,36,42,.5);z-index:40}
 body.exp .treebox{position:fixed;inset:10px;z-index:50;background:#fff;border-radius:24px;padding:12px 16px 12px;box-shadow:0 30px 80px rgba(0,0,0,.35);
-  display:grid;grid-template-columns:minmax(300px,440px) minmax(0,1fr);grid-template-rows:auto auto minmax(0,1fr) auto;
-  grid-template-areas:"xh xh" "sh sh" "st st" "pl ct";gap:8px 12px;min-width:0}
+  display:grid;grid-template-columns:minmax(300px,440px) minmax(0,1fr);grid-template-rows:auto auto minmax(0,1fr) auto auto;
+  grid-template-areas:"xh xh" "sh sh" "st st" "tg tg" "pl ct";gap:8px 12px;min-width:0}
 body.exp .xhead{display:block;grid-area:xh}
 body.exp #xTitle{font-weight:900;font-size:22px;letter-spacing:-.01em;line-height:1.15}
 body.exp #xSub{font-weight:800;font-size:14.5px;color:var(--sub);margin-top:2px}
@@ -197,6 +197,14 @@ body.exp .legend{display:none}
 .zhint{display:block;position:absolute;left:10px;top:6px;font-size:12px;font-weight:800;color:#A0968A;background:rgba(255,255,255,.85);padding:4px 8px;border-radius:8px;pointer-events:none;z-index:2;transition:opacity .4s}
 .zhint.off{opacity:0}
 body.exp .player{grid-area:pl;align-self:end;padding:6px 8px;gap:6px}
+.tooltab{display:none}
+body.exp .tooltab{grid-area:tg;justify-self:center;display:inline-flex;align-items:center;gap:7px;margin:-4px 0 -2px;padding:4px 14px 4px 10px;border:1.5px solid #E3D8C6;border-radius:999px;background:#fff;color:#8C8174;font-family:var(--font);font-weight:900;font-size:12.5px;cursor:pointer;box-shadow:0 6px 16px -10px rgba(80,50,10,.5);z-index:4;transition:border-color .2s,color .2s}
+body.exp .tooltab:hover{border-color:var(--orange);color:var(--orange-d)}
+body.exp .tooltab svg{width:16px;height:16px;transition:transform .35s ease}
+body.exp .player,body.exp .controls{max-height:460px;transition:max-height .42s ease,opacity .3s ease,transform .42s ease,padding .42s ease,margin .42s ease}
+body.exp.tools-off .player,body.exp.tools-off .controls{max-height:0;opacity:0;transform:translateY(26px);padding-top:0;padding-bottom:0;border-width:0;margin:0;pointer-events:none;overflow:hidden}
+body.exp.tools-off .tooltab svg{transform:rotate(180deg)}
+body.exp.tools-off .treebox{row-gap:4px}
 body.exp .ib{width:32px;height:32px;border-radius:11px}
 body.exp .ib.play{width:44px}
 body.exp .xbtn{width:38px;height:38px;background:#FFF0D6;border-color:#EDB769;color:#B85E0B}
@@ -210,7 +218,7 @@ body.exp .btn.primary{box-shadow:0 2px 0 #D07A08}
 body.exp input[type=text]{padding:5px 8px;font-size:13px;border-radius:11px}
 body.exp textarea#list{height:84px;min-height:60px;padding:6px 9px;font-size:12.5px}
 body.exp body.exp .looks{padding:3px 12px}body.exp .looks b{font-size:20px}
-@media (max-width:820px){body.exp .treebox{grid-template-columns:minmax(0,1fr);grid-template-areas:"xh" "sh" "st" "pl" "ct";overflow:auto}body.exp .stage{min-height:58vh}}
+@media (max-width:820px){body.exp .treebox{grid-template-columns:minmax(0,1fr);grid-template-areas:"xh" "sh" "st" "tg" "pl" "ct";overflow:auto}body.exp .stage{min-height:58vh}}
 @media (max-width:980px){
   .main{grid-template-columns:minmax(0,1fr);grid-template-areas:"code" "tree" "expl" "out";grid-template-rows:auto}
   .card{padding:22px 18px;border-radius:24px}
@@ -305,6 +313,7 @@ body.exp body.exp .looks{padding:3px 12px}body.exp .looks b{font-size:20px}
         <span><i class="lg faded"></i>no se miró</span>
         <span><i class="lg gap"></i>hueco vacío (null)</span>
       </div>
+      <button class="tooltab" id="bTools" aria-expanded="true" title="Ocultar o mostrar los controles (tecla H)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg><span>Ocultar controles</span></button>
       <div class="player">
         <button class="ib" id="bFirst" title="Ir al primer paso" aria-label="Primer paso"><svg viewBox="0 0 24 24" fill="currentColor"><rect x="4" y="5" width="3" height="14" rx="1"/><path d="M20 5.5v13a1 1 0 0 1-1.5.86L8.6 12.86a1 1 0 0 1 0-1.72L18.5 4.64A1 1 0 0 1 20 5.5z"/></svg></button>
         <button class="ib" id="bPrev" title="Paso anterior (←)" aria-label="Paso anterior"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5l-7 7 7 7"/></svg></button>
@@ -1404,6 +1413,12 @@ function setExp(on){
   requestAnimationFrame(()=>{W=Math.max(280,$('#stage').clientWidth);lastSH=$('#stage').clientHeight;startTween(frames[idx],true);if(!on)follow();});
 }
 $('#bExpand').onclick=()=>setExp(!EXP);
+function setTools(open){
+  document.body.classList.toggle('tools-off',!open);
+  const b=$('#bTools');b.setAttribute('aria-expanded',open);b.querySelector('span').textContent=open?'Ocultar controles':'Mostrar controles';
+}
+$('#bTools').onclick=()=>setTools(document.body.classList.contains('tools-off'));
+document.addEventListener('keydown',e=>{if(EXP&&(e.key==='h'||e.key==='H')&&!e.target.matches('input[type=text],textarea'))setTools(document.body.classList.contains('tools-off'));});
 document.addEventListener('keydown',e=>{if(e.key==='Escape'&&EXP)setExp(false);});
 
 /* inicio */
