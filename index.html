@@ -191,7 +191,7 @@ body.exp .zoom{display:flex;align-items:center;gap:4px;position:absolute;right:8
 .zoom button:hover{background:var(--orange-l);color:var(--orange-d)}
 .zoom button.fit{width:auto;padding:0 12px;font-size:13.5px}
 #zVal{font-family:var(--mono);font-weight:800;font-size:13px;color:#6F6458;min-width:50px;text-align:center}
-body.exp .zhint{display:block;position:absolute;left:10px;bottom:10px;font-size:12px;font-weight:800;color:#A0968A;background:rgba(255,255,255,.85);padding:4px 8px;border-radius:8px;pointer-events:none;z-index:2;transition:opacity .4s}
+body.exp .zhint{display:block;position:absolute;left:10px;top:6px;font-size:12px;font-weight:800;color:#A0968A;background:rgba(255,255,255,.85);padding:4px 8px;border-radius:8px;pointer-events:none;z-index:2;transition:opacity .4s}
 body.exp .zhint.off{opacity:0}
 body.exp .player{grid-area:pl;align-self:end;padding:6px 8px;gap:6px}
 body.exp .ib{width:32px;height:32px;border-radius:11px}
@@ -812,13 +812,13 @@ function layout(tree){
   const ids=inorderIds(tree),n=ids.length,rank={},depth={};ids.forEach((id,i)=>rank[id]=i);
   let maxD=-1;(function go(id,d){if(!id)return;depth[id]=d;if(d>maxD)maxD=d;go(tree.nodes[id].l,d+1);go(tree.nodes[id].r,d+1);})(tree.root,0);
   const baseH=EXP?Math.max(260,$('#stage').clientHeight-6):(W<560?300:330),padX=16,slots=Math.max(2*n+1,3);
-  const half=Math.max(11,Math.min(48,(W-2*padX)/slots));
+  const half=Math.max(11,Math.min(EXP?90:48,(W-2*padX)/slots));
   const LW=Math.max(W,slots*half+2*padX);
-  const r0=clamp(half*1.25,16,25);
+  const r0=clamp(half*1.25,16,EXP?30:25);
   const y0=Math.max(50,r0*2.3+14),pb=22;
   const rows=Math.max(maxD+2,2);
-  const lv=clamp((baseH-y0-pb)/(rows-1),52,96);
-  const r=clamp(Math.min(r0,lv*0.34),16,25);
+  const lv=clamp((baseH-y0-pb)/(rows-1),52,EXP?130:96);
+  const r=clamp(Math.min(r0,lv*(EXP?0.42:0.34)),16,EXP?30:25);
   const H=Math.max(baseH,y0+(rows-1)*lv+pb);
   const x0=(LW-(2*n+1)*half)/2;
   const pos={};ids.forEach(id=>pos[id]={x:x0+(2*rank[id]+1.5)*half,y:y0+depth[id]*lv});
@@ -1095,7 +1095,7 @@ const VIEW={Z:1,cx:null,cy:null,tcx:null,tcy:null,last:null};
 const ZMIN=1,ZMAX=14;
 function viewRect(VW,H,sw,sh){
   const s0=Math.min(sw/VW,sh/H),sc=s0*VIEW.Z,w=sw/sc,h=sh/sc;
-  if(VIEW.cx==null){VIEW.cx=VIEW.tcx=VW/2;VIEW.cy=VIEW.tcy=H/2;}
+  if(VIEW.cx==null||VIEW.Z<=1.001){VIEW.tcx=VW/2;VIEW.tcy=H/2;if(VIEW.cx==null||VIEW.Z<=1.001){VIEW.cx=VIEW.tcx;VIEW.cy=VIEW.tcy;}}
   VIEW.cx+=(VIEW.tcx-VIEW.cx)*0.22;VIEW.cy+=(VIEW.tcy-VIEW.cy)*0.22;
   const r={x:VIEW.cx-w/2,y:VIEW.cy-h/2,w,h,sc};VIEW.last=r;return r;
 }
@@ -1154,7 +1154,7 @@ function followZoom(){
   if(p.x<L.x+mx||p.x>L.x+L.w-mx||p.y<L.y+my||p.y>L.y+L.h-my){VIEW.tcx=p.x;VIEW.tcy=p.y;}
 }
 function setExp(on){
-  resetView();$('#zHint').classList.remove('off');
+  resetView();$('#zHint').classList.remove('off');clearTimeout(window._zh);if(on)window._zh=setTimeout(hideHint,5000);
   EXP=on;document.body.classList.toggle('exp',on);
   const b=$('#bExpand');b.innerHTML=on?ICON_SHR:ICON_EXP;b.title=on?'Volver a la vista normal (Esc)':'Ver el árbol completo en pantalla grande';
   $('#stage').scrollLeft=0;
